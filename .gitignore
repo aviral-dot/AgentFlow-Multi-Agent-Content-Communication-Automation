@@ -1,0 +1,24 @@
+# Environment variables / secrets
+.env
+credentials.json
+token.json
+
+# LangGraph generated files
+.langgraph_api/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Build files
+build/
+dist/
+wheels/
+*.egg-info/
+
+# IDE
+.vscode/
