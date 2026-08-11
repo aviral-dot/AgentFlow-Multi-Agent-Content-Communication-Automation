@@ -14,26 +14,24 @@ class GraphBuilder:
 
         self.llm = llm
 
-        # Main graph uses the shared AgentState
+        
         self.graph = StateGraph(AgentState)
 
-        # Create node objects
+        
         self.blog_node = BlogNode(self.llm)
         self.email_node = EmailNode(self.llm)
         self.supervisor_node = SupervisorNode(self.llm)
 
     def build_graph(self):
 
-        # --------------------------------------------------
-        # NODES
-        # --------------------------------------------------
+       
 
         self.graph.add_node(
             "supervisor",
             self.supervisor_node.decide
         )
 
-        # Blog Agent nodes
+        
         self.graph.add_node(
             "title_creation",
             self.blog_node.title_creation
@@ -44,7 +42,7 @@ class GraphBuilder:
             self.blog_node.content_generation
         )
 
-        # Email Agent nodes
+        
         self.graph.add_node(
             "draft_email",
             self.email_node.draft_email
@@ -55,18 +53,13 @@ class GraphBuilder:
             self.email_node.send_email
         )
 
-        # --------------------------------------------------
-        # START
-        # --------------------------------------------------
+       
 
         self.graph.add_edge(
             START,
             "supervisor"
         )
 
-        # --------------------------------------------------
-        # SUPERVISOR ROUTING
-        # --------------------------------------------------
 
         self.graph.add_conditional_edges(
             "supervisor",
@@ -77,10 +70,7 @@ class GraphBuilder:
             }
         )
 
-        # --------------------------------------------------
-        # BLOG FLOW
-        # --------------------------------------------------
-
+   
         self.graph.add_edge(
             "title_creation",
             "content_generation"
@@ -91,9 +81,6 @@ class GraphBuilder:
             END
         )
 
-        # --------------------------------------------------
-        # EMAIL FLOW
-        # --------------------------------------------------
 
         self.graph.add_edge(
             "draft_email",
@@ -107,17 +94,13 @@ class GraphBuilder:
 
         return self.graph
 
-    # ------------------------------------------------------
-    # ROUTER
-    # ------------------------------------------------------
+  
 
     def route_request(self, state: AgentState):
 
         return state["route"]
 
-    # ------------------------------------------------------
-    # COMPILE
-    # ------------------------------------------------------
+ 
 
     def setup_graph(self):
 
