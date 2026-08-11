@@ -1,4 +1,4 @@
-# tests/evals/blog/test_blog_eval.py
+
 
 from deepeval import assert_test
 from deepeval.test_case import LLMTestCase
@@ -29,25 +29,23 @@ def test_blog_generation():
 
         query = test_data["query"]
 
-        # Run your actual LangGraph application
+        
         result = graph.invoke(
             {
                 "query": query
             }
         )
 
-        # Make sure the blog was generated
+       
         assert "blog" in result
 
         blog = result["blog"]
 
-        # Make sure title and content exist
+        
         assert blog["title"].strip() != ""
         assert blog["content"].strip() != ""
 
-        # -------------------------
-        # TITLE EVALUATION
-        # -------------------------
+       
 
         title_test_case = LLMTestCase(
             input=query,
@@ -59,9 +57,7 @@ def test_blog_generation():
             [title_relevancy]
         )
 
-        # -------------------------
-        # CONTENT EVALUATION
-        # -------------------------
+      
 
         content_test_case = LLMTestCase(
             input=query,
