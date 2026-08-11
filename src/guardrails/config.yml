@@ -1,0 +1,18 @@
+models:
+  - type: main
+    engine: nim
+    model: meta/llama-3.1-8b-instruct
+
+  - type: content_safety
+    engine: nim
+    model: nvidia/nemotron-3.5-content-safety
+    api_key_env_var: NVIDIA_API_KEY
+
+rails:
+  input:
+    flows:
+      - content safety check input $model=content_safety
+
+  output:
+    flows:
+      - content safety check output $model=content_safety

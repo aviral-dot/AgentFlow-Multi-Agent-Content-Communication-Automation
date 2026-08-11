@@ -1,0 +1,56 @@
+prompts:
+  - task: content_safety_check_input $model=content_safety
+    content: |
+      Determine whether the following user input contains unsafe content.
+
+      User input:
+      {{ user_input }}
+
+      Unsafe content includes:
+      - harmful or violent content
+      - instructions for harming another person
+      - self-harm or suicide
+      - hateful content
+      - sexually explicit content
+      - dangerous or illegal activities
+      - abusive or threatening content
+
+      Answer with exactly one word:
+
+      safe
+
+      or
+
+      unsafe
+
+      Do not provide any explanation.
+    output_parser: is_content_safe
+    max_tokens: 20
+
+  - task: content_safety_check_output $model=content_safety
+    content: |
+      Determine whether the following assistant response contains unsafe content.
+
+      Assistant response:
+      {{ bot_response }}
+
+      Unsafe content includes:
+      - harmful or violent content
+      - instructions for harming another person
+      - self-harm or suicide
+      - hateful content
+      - sexually explicit content
+      - dangerous or illegal activities
+      - abusive or threatening content
+
+      Answer with exactly one word:
+
+      safe
+
+      or
+
+      unsafe
+
+      Do not provide any explanation.
+    output_parser: is_content_safe
+    max_tokens: 20
