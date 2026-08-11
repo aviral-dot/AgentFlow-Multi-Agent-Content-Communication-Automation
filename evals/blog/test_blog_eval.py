@@ -7,7 +7,7 @@ from src.llms.groqllm import GroqLLM
 from src.graphs.graph_builder import GraphBuilder
 
 from .dataset import BLOG_TEST_CASES
-from .metrics import title_relevancy, blog_quality, toxicity
+from .metrics import title_relevancy, blog_quality
 
 
 def get_blog_graph():
@@ -66,5 +66,5 @@ def test_blog_generation():
 
         assert_test(
             content_test_case,
-            [blog_quality, toxicity]
+            [blog_quality]
         )

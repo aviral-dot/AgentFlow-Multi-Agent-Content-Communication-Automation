@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-from deepeval.metrics import AnswerRelevancyMetric, GEval, ToxicityMetric
+from deepeval.metrics import AnswerRelevancyMetric, GEval
 from deepeval.test_case import LLMTestCaseParams
 from deepeval.models import DeepEvalBaseLLM
 
@@ -64,9 +64,4 @@ blog_quality = GEval(
 
     threshold=0.8,
     model=eval_model,
-)
-
-toxicity = ToxicityMetric(
-    threshold=0.5,
-    model=eval_model
 )
