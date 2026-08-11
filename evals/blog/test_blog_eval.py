@@ -65,7 +65,7 @@ def test_blog_generation():
 
         content_test_case = LLMTestCase(
             input=query,
-            actual_output=blog.content
+            actual_output=blog["content"]
         )
 
         assert_test(
