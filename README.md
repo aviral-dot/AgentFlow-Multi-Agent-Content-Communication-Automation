@@ -1,57 +1,113 @@
-# AgentFlow — Multi-Agent Content & Communication Automation
+# 🚀 AgentFlow — Multi-Agent Content & Communication Automation
 
-> **An AI-powered multi-agent automation system for intelligent blog generation and Gmail-based email communication, built with LangGraph, Groq, FastAPI, and structured agent workflows.**
+> An agentic AI automation system that intelligently routes user requests to specialized workflows for **blog generation** and **Gmail communication**, with **LangGraph orchestration, MCP-based tool integration, FastAPI, Groq LLM inference, and NVIDIA content-safety guardrails**.
 
-AgentFlow is a **multi-agent AI system** designed to automate two common productivity workflows:
-
-* ✍️ **Blog Generation** — creates SEO-friendly blog titles and detailed blog content.
-* 📧 **Email Automation** — understands email requests, extracts recipient/subject/body, and sends emails through Gmail.
-
-Instead of using a single LLM chain for every request, AgentFlow uses a **Supervisor-based LangGraph workflow** to intelligently route each user request to the appropriate specialized agent.
+[![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://www.python.org/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Agent%20Orchestration-orange)](https://langchain-ai.github.io/langgraph/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Groq](https://img.shields.io/badge/Groq-LLM%20Inference-orange)](https://groq.com/)
+[![MCP](https://img.shields.io/badge/MCP-Tool%20Integration-purple)](https://modelcontextprotocol.io/)
+[![Gmail API](https://img.shields.io/badge/Gmail-API-red?logo=gmail)](https://developers.google.com/gmail/api)
+[![NVIDIA](https://img.shields.io/badge/NVIDIA-Content%20Safety-76B900?logo=nvidia)](https://developer.nvidia.com/)
 
 ---
 
-## 🚀 Key Features
+## 📌 Overview
 
-### 🧠 Intelligent Request Routing
+**AgentFlow** is a multi-agent AI automation system designed to handle different productivity tasks through specialized agent workflows.
 
-A Supervisor node analyzes the user's request and determines which specialized workflow should handle it.
+Instead of sending every request directly to a single LLM chain, AgentFlow uses a **Supervisor-based LangGraph architecture** to understand the user's request and route it to the appropriate specialized agent.
+
+Currently, the system supports:
+
+* ✍️ **Blog Generation**
+* 📧 **Gmail Email Automation**
+* 🛡️ **Input Content Safety**
+* 🛡️ **Output Content Safety**
+* 🔌 **MCP-based Gmail Tool Integration**
+* 🧠 **Structured LLM Outputs**
+* ⚡ **FastAPI-based API**
+
+### High-Level Flow
 
 ```text
                          User Request
                               │
                               ▼
-                       ┌─────────────┐
-                       │  Supervisor │
-                       └──────┬──────┘
+                     ┌─────────────────┐
+                     │  FastAPI /chat  │
+                     └────────┬────────┘
                               │
-                    ┌─────────┴─────────┐
-                    ▼                   ▼
-                 BLOG                 EMAIL
-                    │                   │
-                    ▼                   ▼
-             Title Creation       Draft Email
-                    │                   │
-                    ▼                   ▼
-             Content Generation    Send via Gmail
-                    │                   │
-                    ▼                   ▼
-                   END                 END
+                              ▼
+                   ┌─────────────────────┐
+                   │  Input Safety Check │
+                   │      NVIDIA         │
+                   └─────────┬───────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │    Supervisor   │
+                    │    LangGraph    │
+                    └────────┬────────┘
+                             │
+                 ┌───────────┴───────────┐
+                 ▼                       ▼
+        ┌────────────────┐      ┌────────────────┐
+        │   Blog Agent   │      │   Email Agent  │
+        └───────┬────────┘      └───────┬────────┘
+                │                       │
+                ▼                       ▼
+        Title Generation         Structured Email
+                │                       │
+                ▼                       ▼
+        Content Generation       MCP Gmail Tool
+                │                       │
+                └───────────┬───────────┘
+                            ▼
+                   ┌──────────────────┐
+                   │ Output Safety    │
+                   │     NVIDIA       │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                         Response
 ```
-
-The Supervisor uses structured LLM output to select exactly one route: `blog` or `email`.
 
 ---
 
-## ✍️ Blog Agent
+# ✨ Key Features
 
-The Blog Agent handles content-generation requests through a two-step workflow:
+## 🧠 1. Supervisor-Based Multi-Agent Architecture
+
+AgentFlow uses **LangGraph** to orchestrate specialized workflows.
+
+A Supervisor analyzes the user's request and selects the appropriate route:
 
 ```text
 User Request
      │
      ▼
-Title Creation
+ Supervisor
+     │
+ ┌───┴────┐
+ ▼        ▼
+Blog    Email
+Agent    Agent
+```
+
+This makes the system modular and easier to extend with additional agents.
+
+---
+
+## ✍️ 2. Blog Generation Agent
+
+The Blog Agent follows a multi-step workflow:
+
+```text
+User Request
+     │
+     ▼
+Title Generation
      │
      ▼
 Content Generation
@@ -62,42 +118,35 @@ Final Blog
 
 ### Capabilities
 
-* Generates creative blog titles
-* Produces SEO-friendly titles
-* Generates detailed blog content
-* Uses Markdown formatting
-* Maintains the generated title while producing the final content
+* Generates blog titles
+* Produces detailed blog content
+* Supports Markdown-formatted output
+* Separates title generation from content generation
+* Maintains state across the workflow
+
+Example:
+
+```json
+{
+  "query": "Write a blog about AI agents"
+}
+```
+
+The Supervisor identifies this as a blog request and routes it to the Blog Agent.
 
 ---
 
-## 📧 Email Agent
+# 📧 3. Email Automation Agent
 
-The Email Agent converts natural-language email requests into structured email data.
+The Email Agent converts natural-language requests into structured email information.
 
-```text
-User Request
-     │
-     ▼
-Email Draft
-     │
-     ├── Recipient
-     ├── Subject
-     └── Body
-     │
-     ▼
-Gmail Email Tool
-     │
-     ▼
-Email Sent
-```
-
-For example:
+Example:
 
 ```text
-Send an email to rahul@example.com regarding tomorrow's meeting.
+"Send an email to rahul@example.com about tomorrow's meeting"
 ```
 
-The Email Agent extracts:
+The agent extracts:
 
 ```json
 {
@@ -111,61 +160,176 @@ The structured email is then passed to the Gmail tool for delivery.
 
 ---
 
-## 🏗️ Architecture
+# 🔌 4. MCP-Based Gmail Tool Integration
 
-AgentFlow follows a **Supervisor + Specialized Agents** architecture implemented using LangGraph.
+AgentFlow uses the **Model Context Protocol (MCP)** to separate the email capability from the main agent workflow.
+
+The architecture is:
+
+```text
+Email Agent
+     │
+     ▼
+EmailTool
+     │
+     ▼
+MCP Client
+     │
+     ▼
+stdio transport
+     │
+     ▼
+gmail_mcp_server.py
+     │
+     ▼
+Gmail API
+     │
+     ▼
+Email Sent
+```
+
+The MCP server exposes an email-sending tool:
+
+```text
+send_email
+```
+
+with:
+
+```text
+to
+subject
+body
+```
+
+This approach keeps external tool execution isolated from the core LangGraph workflow.
+
+---
+
+# 🛡️ 5. AI Content Safety Guardrails
+
+AgentFlow includes a content-safety layer using an NVIDIA safety model through the NVIDIA API.
+
+The system performs **two safety checks**:
+
+### Input Safety
+
+Before the request reaches the agent workflow:
+
+```text
+User Query
+    │
+    ▼
+NVIDIA Content Safety
+    │
+ ┌──┴────┐
+Safe   Unsafe
+ │        │
+ ▼        ▼
+Graph   Block
+```
+
+Unsafe input is rejected before reaching the LangGraph workflow.
+
+### Output Safety
+
+The generated response is also checked:
+
+```text
+LangGraph Response
+       │
+       ▼
+NVIDIA Content Safety
+       │
+    ┌──┴────┐
+   Safe   Unsafe
+    │        │
+    ▼        ▼
+ Return    Block
+```
+
+This provides a basic **defense-in-depth approach** for AI-generated content.
+
+---
+
+# 🏗️ Architecture
+
+AgentFlow follows a **Supervisor + Specialized Agents + Tools** architecture.
 
 ```text
                          ┌─────────────────────┐
-                         │     FastAPI API     │
-                         │      /chat          │
+                         │       Client        │
                          └──────────┬──────────┘
                                     │
                                     ▼
                          ┌─────────────────────┐
-                         │   LangGraph Graph   │
+                         │       FastAPI       │
+                         │       /chat         │
                          └──────────┬──────────┘
                                     │
                                     ▼
                          ┌─────────────────────┐
+                         │  Input Safety Layer │
+                         │       NVIDIA        │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │      LangGraph      │
                          │     Supervisor      │
-                         │   Route Decision    │
                          └──────────┬──────────┘
                                     │
-                     ┌──────────────┴──────────────┐
-                     │                             │
-                     ▼                             ▼
-              ┌──────────────┐              ┌──────────────┐
-              │  Blog Agent  │              │ Email Agent  │
-              └──────┬───────┘              └──────┬───────┘
-                     │                             │
-              ┌──────┴───────┐              ┌──────┴───────┐
-              ▼              ▼              ▼              ▼
-            Title         Content         Draft          Gmail
-            Creation      Generation      Email          Sending
+                    ┌───────────────┴───────────────┐
+                    │                               │
+                    ▼                               ▼
+             ┌──────────────┐               ┌──────────────┐
+             │  Blog Agent  │               │  Email Agent │
+             └───────┬──────┘               └───────┬──────┘
+                     │                              │
+                     ▼                              ▼
+              Title Generation               Email Extraction
+                     │                              │
+                     ▼                              ▼
+              Content Generation              MCP Email Tool
+                                                    │
+                                                    ▼
+                                             Gmail MCP Server
+                                                    │
+                                                    ▼
+                                                Gmail API
+                    │                              │
+                    └──────────────┬───────────────┘
+                                   ▼
+                         ┌─────────────────────┐
+                         │ Output Safety Layer │
+                         │       NVIDIA        │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                               API Response
 ```
 
-The main LangGraph workflow defines the Supervisor, Blog, and Email nodes and connects them using conditional routing.
+---
+
+# 🛠️ Tech Stack
+
+| Technology     | Purpose                                        |
+| -------------- | ---------------------------------------------- |
+| **Python**     | Core application development                   |
+| **LangGraph**  | Multi-agent orchestration and workflow control |
+| **LangChain**  | LLM integration                                |
+| **Groq**       | Fast LLM inference                             |
+| **FastAPI**    | Backend REST API                               |
+| **Pydantic**   | Structured data validation                     |
+| **MCP**        | External tool integration                      |
+| **Gmail API**  | Email authentication and delivery              |
+| **NVIDIA API** | Content-safety checking                        |
+| **Uvicorn**    | ASGI server                                    |
+| **uv**         | Python environment and dependency management   |
 
 ---
 
-## 🛠️ Tech Stack
-
-| Technology    | Purpose                                      |
-| ------------- | -------------------------------------------- |
-| **Python**    | Core application development                 |
-| **LangGraph** | Agent orchestration and workflow management  |
-| **LangChain** | LLM integration                              |
-| **Groq**      | LLM inference                                |
-| **FastAPI**   | Backend REST API                             |
-| **Pydantic**  | Structured LLM outputs and validation        |
-| **Gmail API** | Email authentication and delivery            |
-| **Uvicorn**   | ASGI application server                      |
-| **uv**        | Python dependency and environment management |
-
----
-
-## 📁 Project Structure
+# 📁 Project Structure
 
 ```text
 AgentFlow-Multi-Agent-Content-Communication-Automation/
@@ -205,199 +369,37 @@ AgentFlow-Multi-Agent-Content-Communication-Automation/
         └── email_tool.py
 ```
 
-### Core Components
-
-**`app.py`**
-
-FastAPI entry point. Exposes the `/chat` endpoint and invokes the compiled LangGraph workflow.
-
-**`src/graphs/graph_builder.py`**
-
-Builds and compiles the main LangGraph workflow, including Supervisor routing, Blog nodes, and Email nodes.
-
-**`src/nodes/supervisor_node.py`**
-
-Uses structured LLM output to determine whether a request should be handled by the Blog or Email workflow.
-
-**`src/nodes/blog_node.py`**
-
-Handles blog title generation followed by detailed content generation.
-
-**`src/nodes/mail_node.py`**
-
-Extracts structured email information and invokes the email tool to send the message.
-
-**`src/tools/email_tool.py`**
-
-Provides the Gmail-based email delivery functionality.
-
 ---
 
-# 🔄 Request Flow
+# 🔄 Request Lifecycle
 
-A request enters the system through the FastAPI `/chat` endpoint.
-
-### Example 1 — Blog
+Every request follows a controlled pipeline.
 
 ```text
-POST /chat
-
-{
-  "query": "Write a blog about Generative AI"
-}
-```
-
-Flow:
-
-```text
-Request
-   ↓
-FastAPI
-   ↓
-Supervisor
-   ↓
-Blog Agent
-   ↓
-Title Generation
-   ↓
-Content Generation
-   ↓
-Response
-```
-
-### Example 2 — Email
-
-```text
-POST /chat
-
-{
-  "query": "Send an email to rahul@example.com about tomorrow's meeting"
-}
-```
-
-Flow:
-
-```text
-Request
-   ↓
-FastAPI
-   ↓
-Supervisor
-   ↓
-Email Agent
-   ↓
-Structured Email Draft
-   ↓
-Gmail Tool
-   ↓
-Email Sent
+1. User Request
+       ↓
+2. FastAPI
+       ↓
+3. Input Validation
+       ↓
+4. NVIDIA Content Safety
+       ↓
+5. LangGraph Supervisor
+       ↓
+6. Specialized Agent
+       ↓
+7. Tool Execution (if required)
+       ↓
+8. Generated Response
+       ↓
+9. NVIDIA Output Safety
+       ↓
+10. API Response
 ```
 
 ---
 
-# ⚙️ Installation
-
-## 1. Clone the repository
-
-```bash
-git clone https://github.com/aviral-dot/AgentFlow-Multi-Agent-Content-Communication-Automation.git
-cd AgentFlow-Multi-Agent-Content-Communication-Automation
-```
-
-## 2. Create a virtual environment
-
-Using `uv`:
-
-```bash
-uv venv
-```
-
-Activate it on Windows:
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-## 3. Install dependencies
-
-```bash
-uv sync
-```
-
-Alternatively:
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-# 🔐 Environment Variables
-
-Create a local `.env` file:
-
-```env
-GROQ_API_KEY=your_groq_api_key
-LANGCHAIN_API_KEY=your_langsmith_api_key
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_PROJECT=AgentFlow
-```
-
-**Never commit `.env`, OAuth credentials, or access/refresh tokens to GitHub.**
-
-The repository intentionally excludes sensitive files such as:
-
-```text
-.env
-credentials.json
-token.json
-```
-
----
-
-# 📧 Gmail Setup
-
-To enable email sending, configure Google OAuth credentials for the Gmail API.
-
-Place your local OAuth client configuration in:
-
-```text
-credentials.json
-```
-
-Run the authentication flow using:
-
-```bash
-python gmail_auth.py
-```
-
-The generated OAuth token should remain local and should **never be committed to Git**.
-
----
-
-# ▶️ Running the Application
-
-Start the FastAPI server:
-
-```bash
-python app.py
-```
-
-The API will run on:
-
-```text
-http://localhost:8000
-```
-
-You can also run it using Uvicorn:
-
-```bash
-uvicorn app:app --host 0.0.0.0 --port 8000
-```
-
----
-
-# 🧪 API Usage
+# 🧪 API
 
 ## Health Check
 
@@ -413,105 +415,324 @@ Response:
 }
 ```
 
-## Chat
+---
+
+## Chat Endpoint
 
 ```http
 POST /chat
 ```
 
-Request:
+### Request
 
 ```json
 {
-  "query": "Write a blog about AI agents"
+  "query": "Write a blog about Generative AI"
 }
 ```
 
-The system automatically determines the appropriate workflow.
+### Blog Flow
+
+```text
+POST /chat
+     ↓
+Input Safety
+     ↓
+Supervisor
+     ↓
+Blog Agent
+     ↓
+Title Generation
+     ↓
+Content Generation
+     ↓
+Output Safety
+     ↓
+Response
+```
 
 ---
 
-# 🧩 Why Multi-Agent Architecture?
+### Email Flow
 
-A single general-purpose LLM can perform both tasks, but separating responsibilities into specialized workflows provides several advantages:
+```json
+{
+  "query": "Send an email to rahul@example.com about tomorrow's meeting"
+}
+```
 
-* **Clear separation of responsibilities**
-* **More predictable routing**
-* **Easier testing and debugging**
-* **Independent agent development**
-* **Better workflow control**
-* **Easy extension with additional agents**
+Flow:
 
-The current architecture can be extended with additional specialized capabilities without redesigning the entire system.
+```text
+POST /chat
+     ↓
+Input Safety
+     ↓
+Supervisor
+     ↓
+Email Agent
+     ↓
+Structured Email
+     ↓
+MCP Email Tool
+     ↓
+Gmail MCP Server
+     ↓
+Gmail API
+     ↓
+Output Safety
+     ↓
+Response
+```
 
-For example:
+---
+
+# ⚙️ Installation
+
+## 1. Clone Repository
+
+```bash
+git clone https://github.com/aviral-dot/AgentFlow-Multi-Agent-Content-Communication-Automation.git
+
+cd AgentFlow-Multi-Agent-Content-Communication-Automation
+```
+
+## 2. Create Virtual Environment
+
+Using `uv`:
+
+```bash
+uv venv
+```
+
+### Windows
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+## 3. Install Dependencies
+
+```bash
+uv sync
+```
+
+Or:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+# 🔐 Environment Variables
+
+Create a local `.env` file:
+
+```env
+GROQ_API_KEY=your_groq_api_key
+
+NVIDIA_API_KEY=your_nvidia_api_key
+
+LANGCHAIN_API_KEY=your_langsmith_api_key
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_PROJECT=AgentFlow
+```
+
+### ⚠️ Security
+
+Never commit:
+
+```text
+.env
+credentials.json
+token.json
+```
+
+to GitHub.
+
+API keys and OAuth tokens should always remain outside version control.
+
+---
+
+# 📧 Gmail Configuration
+
+To enable Gmail sending:
+
+### 1. Create Google OAuth credentials
+
+Create a Gmail API OAuth client configuration and save it locally as:
+
+```text
+credentials.json
+```
+
+### 2. Run authentication
+
+```bash
+python gmail_auth.py
+```
+
+This generates the local OAuth token.
+
+```text
+token.json
+```
+
+Keep this file private.
+
+---
+
+# ▶️ Running the Application
+
+Start the FastAPI application:
+
+```bash
+python app.py
+```
+
+Or:
+
+```bash
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+The API will be available at:
+
+```text
+http://localhost:8000
+```
+
+Interactive API documentation:
+
+```text
+http://localhost:8000/docs
+```
+
+---
+
+# 🧠 Why Multi-Agent Architecture?
+
+A single LLM could technically perform both tasks.
+
+However, specialized agents provide:
+
+* Clear separation of responsibilities
+* Explicit workflow control
+* Easier debugging
+* Better modularity
+* Independent agent development
+* Easier tool integration
+* Easier future expansion
+
+For example, the architecture can later evolve into:
 
 ```text
                     Supervisor
                         │
-       ┌────────────────┼────────────────┐
-       ▼                ▼                ▼
-     Blog             Email           Future Agent
-     Agent            Agent              │
-                                     ┌────┴────┐
-                                     ▼         ▼
-                                   Search    Calendar
+        ┌───────────────┼────────────────┐
+        │               │                │
+        ▼               ▼                ▼
+      Blog            Email            Search
+      Agent           Agent             Agent
+                                        │
+                                  ┌─────┴─────┐
+                                  ▼           ▼
+                               Web Tool    RAG Tool
 ```
 
 ---
 
-# 🔒 Current Security Considerations
+# 🛡️ Security Architecture
 
-AgentFlow keeps credentials outside the repository through environment variables and Git exclusions.
+Current security controls include:
 
-The project is also structured so that security and validation layers can be added around the existing LangGraph workflow.
+```text
+                  User Input
+                      │
+                      ▼
+              Content Safety
+                  NVIDIA
+                      │
+                      ▼
+               Agent Workflow
+                      │
+                      ▼
+               Tool Execution
+                      │
+                      ▼
+              Generated Output
+                      │
+                      ▼
+              Content Safety
+                  NVIDIA
+                      │
+                      ▼
+                  Response
+```
 
-### Planned enhancements
+Additionally:
 
-* 🛡️ NeMo Guardrails
-* 🧪 DeepEval-based evaluation
-* 🔍 Prompt injection protection
-* 🧹 Input/output validation
-* 📊 LLM observability
-* ⚡ Caching and performance optimization
-* 🧠 Memory support
-* 🔐 More robust tool authorization
+* API keys are loaded through environment variables.
+* OAuth credentials are kept outside Git.
+* Gmail authentication uses OAuth.
+* External email functionality is isolated through MCP.
+* Structured outputs are used for agent routing and email extraction.
 
-> These are planned/next-stage improvements and are **not represented as currently implemented features**.
+---
+
+# 📈 Current Implementation
+
+### ✅ Implemented
+
+* [x] FastAPI backend
+* [x] LangGraph workflow
+* [x] Supervisor routing
+* [x] Blog Agent
+* [x] Email Agent
+* [x] Structured LLM outputs
+* [x] Groq LLM integration
+* [x] Gmail API integration
+* [x] MCP-based email tool
+* [x] Gmail MCP server
+* [x] Input content-safety checking
+* [x] Output content-safety checking
+* [x] Environment-based secret management
 
 ---
 
 # 🗺️ Roadmap
 
-### Phase 1 — Core Multi-Agent System
+## Phase 1 — Agent Engineering
 
 * [x] Supervisor routing
-* [x] Blog generation workflow
-* [x] Email drafting workflow
-* [x] Gmail email sending
-* [x] FastAPI backend
+* [x] Specialized Blog Agent
+* [x] Specialized Email Agent
 * [x] LangGraph orchestration
-* [x] Structured LLM outputs
+* [x] Structured outputs
+* [x] MCP tool integration
 
-### Phase 2 — AI Safety & Evaluation
+## Phase 2 — AI Safety & Evaluation
 
-* [ ] NeMo Guardrails
-* [ ] Prompt injection protection
-* [ ] DeepEval test suite
+* [x] NVIDIA content-safety integration
+* [x] Input safety validation
+* [x] Output safety validation
+* [ ] Prompt-injection evaluation
+* [ ] DeepEval evaluation suite
 * [ ] Automated quality evaluation
-* [ ] Input/output validation
+* [ ] More granular tool authorization
 
-### Phase 3 — Production Engineering
+## Phase 3 — Observability & Reliability
 
-* [ ] LangSmith/LangFuse observability
-* [ ] Request tracing
-* [ ] Error handling improvements
+* [ ] Distributed/request tracing
+* [ ] LangSmith observability
+* [ ] LLM latency monitoring
+* [ ] Error tracking
+* [ ] Retry mechanisms
 * [ ] Rate limiting
 * [ ] Response caching
-* [ ] Retry mechanisms
-* [ ] Tool authorization
 
-### Phase 4 — Advanced Agentic Capabilities
+## Phase 4 — Advanced Agentic Capabilities
 
 * [ ] Additional specialized agents
 * [ ] Long-term memory
@@ -522,74 +743,98 @@ The project is also structured so that security and validation layers can be add
 
 ---
 
-# 🎯 Project Goals
+# 🎯 Engineering Goals
 
-AgentFlow is designed as a practical exploration of **agent engineering and LLM application development**, focusing on:
+AgentFlow is built as a practical exploration of modern **AI/LLM application engineering**, focusing on:
 
-* Multi-agent orchestration
-* Graph-based workflow design
+* Multi-agent system design
+* Agent orchestration
+* Graph-based workflows
 * Structured LLM outputs
-* Tool integration
-* API-based AI applications
+* Tool calling
+* MCP integration
+* API-based AI systems
 * AI safety
-* Evaluation
+* Content moderation
+* Authentication and authorization
 * Production-oriented architecture
+
+---
+
+# 🚀 Future Architecture
+
+The long-term goal is to evolve AgentFlow from a simple two-agent automation system into a more complete **agentic workflow platform**:
+
+```text
+                         ┌───────────────┐
+                         │     User      │
+                         └───────┬───────┘
+                                 │
+                                 ▼
+                        ┌─────────────────┐
+                        │   API Gateway   │
+                        └────────┬────────┘
+                                 │
+                                 ▼
+                        ┌─────────────────┐
+                        │ Safety Layer    │
+                        └────────┬────────┘
+                                 │
+                                 ▼
+                        ┌─────────────────┐
+                        │    Supervisor   │
+                        └────────┬────────┘
+                                 │
+             ┌───────────────────┼───────────────────┐
+             │                   │                   │
+             ▼                   ▼                   ▼
+          Blog Agent         Email Agent        Search Agent
+             │                   │                   │
+             ▼                   ▼                   ▼
+          Content              MCP Tools           RAG/Web
+             │                   │                   │
+             └───────────────────┼───────────────────┘
+                                 │
+                                 ▼
+                        ┌─────────────────┐
+                        │ Output Safety   │
+                        └────────┬────────┘
+                                 │
+                                 ▼
+                              User
+```
 
 ---
 
 # 🤝 Contributing
 
-Contributions, suggestions, and improvements are welcome.
-
-1. Fork the repository
-2. Create a feature branch
+Contributions and suggestions are welcome.
 
 ```bash
 git checkout -b feature/new-agent
 ```
 
-3. Commit your changes
-
-```bash
-git commit -m "Add new agent"
-```
-
-4. Push the branch
-
-```bash
-git push origin feature/new-agent
-```
-
-5. Open a Pull Request
+Make your changes, commit them, and open a Pull Request.
 
 ---
 
 # 📄 License
 
-This project is currently available for learning and development purposes.
+This project is currently intended for learning, experimentation, and development purposes.
 
 ---
 
-## ⭐ Acknowledgements
-
-Built using:
-
-* LangGraph
-* LangChain
-* Groq
-* FastAPI
-* Gmail API
-* Pydantic
-
----
-
-## 👨‍💻 Author
+# 👨‍💻 Author
 
 **Aviral**
 
-GitHub:
-https://github.com/aviral-dot
+GitHub: [@aviral-dot](https://github.com/aviral-dot)
 
 ---
 
-⭐ If you find this project useful, consider giving the repository a star.
+## ⭐ Support
+
+If you find this project useful, consider giving the repository a ⭐.
+
+**AgentFlow — From LLM calls to controlled agentic workflows.**
+
