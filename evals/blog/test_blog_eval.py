@@ -42,8 +42,8 @@ def test_blog_generation():
         blog = result["blog"]
 
         # Make sure title and content exist
-        assert blog.title.strip() != ""
-        assert blog.content.strip() != ""
+        assert blog["title"].strip() != ""
+        assert blog["content"].strip() != ""
 
         # -------------------------
         # TITLE EVALUATION
@@ -51,7 +51,7 @@ def test_blog_generation():
 
         title_test_case = LLMTestCase(
             input=query,
-            actual_output=blog.title
+            actual_output=blog["title"]
         )
 
         assert_test(
