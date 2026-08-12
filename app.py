@@ -166,18 +166,31 @@ async def chat(request: Request):
             }
         )
 
-
+        print("FULL GRAPH RESULT:")
+        print(result)
       
 
-        response = result.get(
-            "response",
-            ""
-        )
+        if result.get("route") == "blog":
 
+            blog_data = result.get("blog", {})
 
-        if not response:
+            title = blog_data.get("title", "")
+            content = blog_data.get("content", "")
+ 
+            response = f"# {title}\n\n{content}"
 
-            response = "Request completed successfully."
+        elif result.get("route") == "email":
+
+            email_data = result.get("email", {})
+
+            response = email_data.get(
+              "content",
+              "Email generated successfully."
+            )
+
+        else:
+
+             response = "Request completed successfully."
 
 
         print("GRAPH RESPONSE:")
