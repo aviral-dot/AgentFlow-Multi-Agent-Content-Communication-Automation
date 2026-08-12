@@ -1,20 +1,12 @@
 # 🚀 AgentFlow — Multi-Agent Content & Communication Automation
 
-> An agentic AI automation system that intelligently routes user requests to specialized workflows for **blog generation** and **Gmail communication**, with **LangGraph orchestration, MCP-based tool integration, FastAPI, Groq LLM inference, and NVIDIA content-safety guardrails**.
-
-[![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://www.python.org/)
-[![LangGraph](https://img.shields.io/badge/LangGraph-Agent%20Orchestration-orange)](https://langchain-ai.github.io/langgraph/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Groq](https://img.shields.io/badge/Groq-LLM%20Inference-orange)](https://groq.com/)
-[![MCP](https://img.shields.io/badge/MCP-Tool%20Integration-purple)](https://modelcontextprotocol.io/)
-[![Gmail API](https://img.shields.io/badge/Gmail-API-red?logo=gmail)](https://developers.google.com/gmail/api)
-[![NVIDIA](https://img.shields.io/badge/NVIDIA-Content%20Safety-76B900?logo=nvidia)](https://developer.nvidia.com/)
+> An agentic AI automation platform with a **Streamlit frontend**, **FastAPI backend**, **LangGraph multi-agent orchestration**, **MCP-based Gmail integration**, **Groq LLM inference**, and **NVIDIA content-safety guardrails**.
 
 ---
 
 ## 📌 Overview
 
-**AgentFlow** is a multi-agent AI automation system designed to handle different productivity tasks through specialized agent workflows.
+**AgentFlow** is a multi-agent AI automation system that allows users to interact with specialized AI workflows through a web-based **Streamlit interface**.
 
 Instead of sending every request directly to a single LLM chain, AgentFlow uses a **Supervisor-based LangGraph architecture** to understand the user's request and route it to the appropriate specialized agent.
 
@@ -26,80 +18,179 @@ Currently, the system supports:
 * 🛡️ **Output Content Safety**
 * 🔌 **MCP-based Gmail Tool Integration**
 * 🧠 **Structured LLM Outputs**
-* ⚡ **FastAPI-based API**
+* ⚡ **FastAPI Backend**
+* 🎨 **Streamlit Frontend**
 
-### High-Level Flow
+---
+
+# 🏗️ System Architecture
+
+The application follows a frontend → API → agent orchestration architecture:
 
 ```text
-                         User Request
-                              │
-                              ▼
-                     ┌─────────────────┐
-                     │  FastAPI /chat  │
-                     └────────┬────────┘
-                              │
-                              ▼
-                   ┌─────────────────────┐
-                   │  Input Safety Check │
-                   │      NVIDIA         │
-                   └─────────┬───────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-                    │    Supervisor   │
-                    │    LangGraph    │
-                    └────────┬────────┘
-                             │
-                 ┌───────────┴───────────┐
-                 ▼                       ▼
-        ┌────────────────┐      ┌────────────────┐
-        │   Blog Agent   │      │   Email Agent  │
-        └───────┬────────┘      └───────┬────────┘
-                │                       │
-                ▼                       ▼
-        Title Generation         Structured Email
-                │                       │
-                ▼                       ▼
-        Content Generation       MCP Gmail Tool
-                │                       │
-                └───────────┬───────────┘
-                            ▼
-                   ┌──────────────────┐
-                   │ Output Safety    │
-                   │     NVIDIA       │
-                   └────────┬─────────┘
-                            │
-                            ▼
-                         Response
+                         ┌──────────────────────┐
+                         │        User          │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │   Streamlit Frontend │
+                         │        UI            │
+                         └──────────┬───────────┘
+                                    │
+                                    │ HTTP
+                                    ▼
+                         ┌──────────────────────┐
+                         │    FastAPI Backend   │
+                         │       /chat          │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │  Input Safety Layer  │
+                         │       NVIDIA        │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │      LangGraph       │
+                         │      Supervisor      │
+                         └──────────┬───────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │                               │
+                    ▼                               ▼
+             ┌──────────────┐               ┌──────────────┐
+             │  Blog Agent  │               │  Email Agent │
+             └───────┬──────┘               └───────┬──────┘
+                     │                              │
+                     ▼                              ▼
+              Blog Generation                  Structured Email
+                                                    │
+                                                    ▼
+                                               MCP Tool
+                                                    │
+                                                    ▼
+                                            Gmail MCP Server
+                                                    │
+                                                    ▼
+                                                Gmail API
+                    │                              │
+                    └──────────────┬───────────────┘
+                                   ▼
+                         ┌──────────────────────┐
+                         │ Output Safety Layer  │
+                         │       NVIDIA        │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │   FastAPI Response   │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │   Streamlit Frontend │
+                         │    Display Result    │
+                         └──────────────────────┘
+```
+
+---
+
+# 🎨 Streamlit Frontend
+
+AgentFlow provides a dedicated **Streamlit frontend** for interacting with the multi-agent system.
+
+The frontend acts as the user-facing layer while FastAPI handles the backend API and agent execution.
+
+### Frontend capabilities
+
+* 💬 Interactive chat interface
+* ✍️ Blog generation requests
+* 📧 Email automation requests
+* 🤖 Agent workflow interaction
+* 📋 Structured response rendering
+* ⚠️ Error handling
+* 🔄 API request handling
+* 🎨 Markdown response rendering
+* 🧩 Separation between frontend and backend
+
+### User interaction flow
+
+```text
+                    User
+                     │
+                     ▼
+            ┌─────────────────┐
+            │ Streamlit Chat  │
+            │      UI         │
+            └────────┬────────┘
+                     │
+                     │ HTTP POST
+                     ▼
+            ┌─────────────────┐
+            │ FastAPI /chat   │
+            └────────┬────────┘
+                     │
+                     ▼
+              Agent Workflow
+                     │
+                     ▼
+               Final Result
+                     │
+                     ▼
+            ┌─────────────────┐
+            │ Streamlit UI    │
+            │ Render Response │
+            └─────────────────┘
 ```
 
 ---
 
 # ✨ Key Features
 
-## 🧠 1. Supervisor-Based Multi-Agent Architecture
+## 🎨 1. Streamlit AI Interface
+
+The Streamlit application provides a simple conversational interface for interacting with AgentFlow.
+
+Users can enter natural-language requests such as:
+
+```text
+Write a blog about the future of AI agents.
+```
+
+or:
+
+```text
+Send an email to rahul@example.com about tomorrow's meeting.
+```
+
+The frontend sends the request to the FastAPI backend and displays the resulting response.
+
+---
+
+## 🧠 2. Supervisor-Based Multi-Agent Architecture
 
 AgentFlow uses **LangGraph** to orchestrate specialized workflows.
 
-A Supervisor analyzes the user's request and selects the appropriate route:
+The Supervisor analyzes the user's request and selects the appropriate agent:
 
 ```text
-User Request
-     │
-     ▼
- Supervisor
-     │
- ┌───┴────┐
- ▼        ▼
-Blog    Email
-Agent    Agent
+                    User Request
+                         │
+                         ▼
+                    Supervisor
+                         │
+                  ┌──────┴──────┐
+                  ▼             ▼
+               Blog Agent   Email Agent
 ```
 
 This makes the system modular and easier to extend with additional agents.
 
 ---
 
-## ✍️ 2. Blog Generation Agent
+# ✍️ 3. Blog Generation Agent
 
 The Blog Agent follows a multi-step workflow:
 
@@ -124,29 +215,27 @@ Final Blog
 * Separates title generation from content generation
 * Maintains state across the workflow
 
-Example:
+Example request:
 
-```json
-{
-  "query": "Write a blog about AI agents"
-}
+```text
+Write a blog about Generative AI.
 ```
 
-The Supervisor identifies this as a blog request and routes it to the Blog Agent.
+The Supervisor identifies the request as a blog-generation task and routes it to the Blog Agent.
 
 ---
 
-# 📧 3. Email Automation Agent
+# 📧 4. Email Automation Agent
 
 The Email Agent converts natural-language requests into structured email information.
 
 Example:
 
 ```text
-"Send an email to rahul@example.com about tomorrow's meeting"
+Send an email to rahul@example.com about tomorrow's meeting.
 ```
 
-The agent extracts:
+The agent extracts structured information:
 
 ```json
 {
@@ -156,21 +245,19 @@ The agent extracts:
 }
 ```
 
-The structured email is then passed to the Gmail tool for delivery.
+The structured email is then passed to the MCP Gmail tool.
 
 ---
 
-# 🔌 4. MCP-Based Gmail Tool Integration
+# 🔌 5. MCP-Based Gmail Tool Integration
 
-AgentFlow uses the **Model Context Protocol (MCP)** to separate the email capability from the main agent workflow.
-
-The architecture is:
+AgentFlow uses the **Model Context Protocol (MCP)** to separate email functionality from the core agent workflow.
 
 ```text
 Email Agent
      │
      ▼
-EmailTool
+Email Tool
      │
      ▼
 MCP Client
@@ -188,7 +275,7 @@ Gmail API
 Email Sent
 ```
 
-The MCP server exposes an email-sending tool:
+The MCP server exposes an email-sending capability:
 
 ```text
 send_email
@@ -202,137 +289,138 @@ subject
 body
 ```
 
-This approach keeps external tool execution isolated from the core LangGraph workflow.
+This keeps external tool execution isolated from the main LangGraph workflow.
 
 ---
 
-# 🛡️ 5. AI Content Safety Guardrails
+# 🛡️ 6. AI Content Safety Guardrails
 
 AgentFlow includes a content-safety layer using an NVIDIA safety model through the NVIDIA API.
 
-The system performs **two safety checks**:
+The system performs two safety checks.
 
 ### Input Safety
 
-Before the request reaches the agent workflow:
-
 ```text
-User Query
+User Input
     │
     ▼
 NVIDIA Content Safety
     │
  ┌──┴────┐
+ ▼       ▼
 Safe   Unsafe
- │        │
- ▼        ▼
+ │       │
+ ▼       ▼
 Graph   Block
 ```
 
-Unsafe input is rejected before reaching the LangGraph workflow.
+Unsafe requests are rejected before reaching the agent workflow.
 
 ### Output Safety
 
-The generated response is also checked:
-
 ```text
-LangGraph Response
+Generated Response
        │
        ▼
 NVIDIA Content Safety
        │
     ┌──┴────┐
+    ▼       ▼
    Safe   Unsafe
-    │        │
-    ▼        ▼
+    │       │
+    ▼       ▼
  Return    Block
 ```
 
-This provides a basic **defense-in-depth approach** for AI-generated content.
+This provides a basic defense-in-depth safety architecture.
 
 ---
 
-# 🏗️ Architecture
+# 🏗️ Application Architecture
 
-AgentFlow follows a **Supervisor + Specialized Agents + Tools** architecture.
+AgentFlow separates the frontend, backend, agent orchestration, and external tools.
 
 ```text
-                         ┌─────────────────────┐
-                         │       Client        │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │       FastAPI       │
-                         │       /chat         │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │  Input Safety Layer │
-                         │       NVIDIA        │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │      LangGraph      │
-                         │     Supervisor      │
-                         └──────────┬──────────┘
-                                    │
-                    ┌───────────────┴───────────────┐
-                    │                               │
-                    ▼                               ▼
-             ┌──────────────┐               ┌──────────────┐
-             │  Blog Agent  │               │  Email Agent │
-             └───────┬──────┘               └───────┬──────┘
-                     │                              │
-                     ▼                              ▼
-              Title Generation               Email Extraction
-                     │                              │
-                     ▼                              ▼
-              Content Generation              MCP Email Tool
-                                                    │
-                                                    ▼
-                                             Gmail MCP Server
-                                                    │
-                                                    ▼
-                                                Gmail API
-                    │                              │
-                    └──────────────┬───────────────┘
-                                   ▼
-                         ┌─────────────────────┐
-                         │ Output Safety Layer │
-                         │       NVIDIA        │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                               API Response
+┌──────────────────────────────────────────────────────┐
+│                   Streamlit UI                       │
+│                                                      │
+│  Chat Interface │ User Input │ Response Rendering    │
+└─────────────────────────┬────────────────────────────┘
+                          │
+                          │ HTTP
+                          ▼
+┌──────────────────────────────────────────────────────┐
+│                    FastAPI                           │
+│                                                      │
+│                 /chat API Endpoint                   │
+└─────────────────────────┬────────────────────────────┘
+                          │
+                          ▼
+┌──────────────────────────────────────────────────────┐
+│                 Safety Layer                         │
+│                                                      │
+│              NVIDIA Content Safety                   │
+└─────────────────────────┬────────────────────────────┘
+                          │
+                          ▼
+┌──────────────────────────────────────────────────────┐
+│                  LangGraph                           │
+│                                                      │
+│                  Supervisor                          │
+└─────────────────────────┬────────────────────────────┘
+                          │
+             ┌────────────┴────────────┐
+             ▼                         ▼
+      ┌──────────────┐          ┌──────────────┐
+      │  Blog Agent  │          │  Email Agent │
+      └──────┬───────┘          └──────┬───────┘
+             │                         │
+             ▼                         ▼
+      Blog Generation             MCP Email Tool
+                                       │
+                                       ▼
+                                Gmail MCP Server
+                                       │
+                                       ▼
+                                   Gmail API
+             │                         │
+             └────────────┬────────────┘
+                          ▼
+                  Output Safety
+                          │
+                          ▼
+                  FastAPI Response
+                          │
+                          ▼
+                  Streamlit Frontend
 ```
 
 ---
 
 # 🛠️ Tech Stack
 
-| Technology     | Purpose                                        |
-| -------------- | ---------------------------------------------- |
-| **Python**     | Core application development                   |
-| **LangGraph**  | Multi-agent orchestration and workflow control |
-| **LangChain**  | LLM integration                                |
-| **Groq**       | Fast LLM inference                             |
-| **FastAPI**    | Backend REST API                               |
-| **Pydantic**   | Structured data validation                     |
-| **MCP**        | External tool integration                      |
-| **Gmail API**  | Email authentication and delivery              |
-| **NVIDIA API** | Content-safety checking                        |
-| **Uvicorn**    | ASGI server                                    |
-| **uv**         | Python environment and dependency management   |
+| Technology     | Purpose                                      |
+| -------------- | -------------------------------------------- |
+| **Python**     | Core application development                 |
+| **Streamlit**  | Interactive frontend and chat UI             |
+| **FastAPI**    | Backend REST API                             |
+| **LangGraph**  | Multi-agent orchestration                    |
+| **LangChain**  | LLM integration                              |
+| **Groq**       | Fast LLM inference                           |
+| **Pydantic**   | Structured data validation                   |
+| **MCP**        | External tool integration                    |
+| **Gmail API**  | Email authentication and delivery            |
+| **NVIDIA API** | Content-safety checking                      |
+| **Uvicorn**    | ASGI server                                  |
+| **uv**         | Python environment and dependency management |
 
 ---
 
 # 📁 Project Structure
 
 ```text
-AgentFlow-Multi-Agent-Content-Communication-Automation/
+RAGFury-Agentic-Knowledge-Retrieval-Research-System/
 │
 ├── app.py
 ├── gmail_auth.py
@@ -343,6 +431,7 @@ AgentFlow-Multi-Agent-Content-Communication-Automation/
 ├── uv.lock
 ├── request.json
 ├── test_nemo.py
+├── streamlit_app.py
 ├── README.md
 │
 └── src/
@@ -369,159 +458,118 @@ AgentFlow-Multi-Agent-Content-Communication-Automation/
         └── email_tool.py
 ```
 
+> If your Streamlit file has a different name, such as `frontend.py` or `ui.py`, replace `streamlit_app.py` above with the actual filename.
+
 ---
 
 # 🔄 Request Lifecycle
 
-Every request follows a controlled pipeline.
+Every user request follows this pipeline:
 
 ```text
-1. User Request
-       ↓
-2. FastAPI
-       ↓
-3. Input Validation
-       ↓
-4. NVIDIA Content Safety
-       ↓
-5. LangGraph Supervisor
-       ↓
-6. Specialized Agent
-       ↓
-7. Tool Execution (if required)
-       ↓
-8. Generated Response
-       ↓
-9. NVIDIA Output Safety
-       ↓
-10. API Response
+1. User
+      ↓
+2. Streamlit Frontend
+      ↓
+3. HTTP Request
+      ↓
+4. FastAPI Backend
+      ↓
+5. Input Validation
+      ↓
+6. NVIDIA Input Safety
+      ↓
+7. LangGraph Supervisor
+      ↓
+8. Specialized Agent
+      ↓
+9. Tool Execution
+      ↓
+10. Generated Response
+      ↓
+11. NVIDIA Output Safety
+      ↓
+12. FastAPI Response
+      ↓
+13. Streamlit UI
+      ↓
+14. User
 ```
 
 ---
 
-# 🧪 API
+# 🖥️ Running the Application
 
-## Health Check
-
-```http
-GET /
-```
-
-Response:
-
-```json
-{
-  "message": "Multi-Agent AI System is running"
-}
-```
-
----
-
-## Chat Endpoint
-
-```http
-POST /chat
-```
-
-### Request
-
-```json
-{
-  "query": "Write a blog about Generative AI"
-}
-```
-
-### Blog Flow
+AgentFlow uses two processes:
 
 ```text
-POST /chat
-     ↓
-Input Safety
-     ↓
-Supervisor
-     ↓
-Blog Agent
-     ↓
-Title Generation
-     ↓
-Content Generation
-     ↓
-Output Safety
-     ↓
-Response
+Streamlit Frontend
+       │
+       │ HTTP
+       ▼
+FastAPI Backend
+       │
+       ▼
+LangGraph Agents
 ```
 
----
+## 1. Start the FastAPI Backend
 
-### Email Flow
-
-```json
-{
-  "query": "Send an email to rahul@example.com about tomorrow's meeting"
-}
-```
-
-Flow:
-
-```text
-POST /chat
-     ↓
-Input Safety
-     ↓
-Supervisor
-     ↓
-Email Agent
-     ↓
-Structured Email
-     ↓
-MCP Email Tool
-     ↓
-Gmail MCP Server
-     ↓
-Gmail API
-     ↓
-Output Safety
-     ↓
-Response
-```
-
----
-
-# ⚙️ Installation
-
-## 1. Clone Repository
-
-```bash
-git clone https://github.com/aviral-dot/AgentFlow-Multi-Agent-Content-Communication-Automation.git
-
-cd AgentFlow-Multi-Agent-Content-Communication-Automation
-```
-
-## 2. Create Virtual Environment
-
-Using `uv`:
-
-```bash
-uv venv
-```
-
-### Windows
+Activate your virtual environment:
 
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-## 3. Install Dependencies
+Then run:
 
 ```bash
-uv sync
+python app.py
 ```
 
 Or:
 
 ```bash
-pip install -r requirements.txt
+uvicorn app:app --host 0.0.0.0 --port 8000
 ```
+
+Backend:
+
+```text
+http://localhost:8000
+```
+
+API documentation:
+
+```text
+http://localhost:8000/docs
+```
+
+---
+
+## 2. Start Streamlit
+
+Open a **second terminal** in the same project directory.
+
+Activate the environment:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Run:
+
+```bash
+streamlit run streamlit_app.py
+```
+
+Streamlit will provide a local URL similar to:
+
+```text
+http://localhost:8501
+```
+
+Open that URL in your browser.
 
 ---
 
@@ -539,6 +587,12 @@ LANGCHAIN_TRACING_V2=true
 LANGCHAIN_PROJECT=AgentFlow
 ```
 
+If your Streamlit frontend communicates with FastAPI through an environment variable, you can also configure:
+
+```env
+BACKEND_URL=http://localhost:8000
+```
+
 ### ⚠️ Security
 
 Never commit:
@@ -547,6 +601,7 @@ Never commit:
 .env
 credentials.json
 token.json
+.venv/
 ```
 
 to GitHub.
@@ -557,147 +612,218 @@ API keys and OAuth tokens should always remain outside version control.
 
 # 📧 Gmail Configuration
 
-To enable Gmail sending:
+To enable Gmail automation:
 
-### 1. Create Google OAuth credentials
+### 1. Configure Gmail OAuth
 
-Create a Gmail API OAuth client configuration and save it locally as:
+Create Google OAuth credentials and save them locally as:
 
 ```text
 credentials.json
 ```
 
-### 2. Run authentication
+### 2. Authenticate
 
 ```bash
 python gmail_auth.py
 ```
 
-This generates the local OAuth token.
+This generates:
 
 ```text
 token.json
 ```
 
-Keep this file private.
+Keep both files private.
 
 ---
 
-# ▶️ Running the Application
+# 🧪 API
 
-Start the FastAPI application:
+The Streamlit frontend communicates with the FastAPI backend.
 
-```bash
-python app.py
+## Health Check
+
+```http
+GET /
 ```
 
-Or:
+Example response:
 
-```bash
-uvicorn app:app --host 0.0.0.0 --port 8000
-```
-
-The API will be available at:
-
-```text
-http://localhost:8000
-```
-
-Interactive API documentation:
-
-```text
-http://localhost:8000/docs
+```json
+{
+  "message": "Multi-Agent AI System is running"
+}
 ```
 
 ---
 
-# 🧠 Why Multi-Agent Architecture?
+## Chat Endpoint
 
-A single LLM could technically perform both tasks.
+```http
+POST /chat
+```
 
-However, specialized agents provide:
+Example request:
 
-* Clear separation of responsibilities
-* Explicit workflow control
-* Easier debugging
-* Better modularity
-* Independent agent development
-* Easier tool integration
-* Easier future expansion
+```json
+{
+  "query": "Write a blog about Generative AI"
+}
+```
 
-For example, the architecture can later evolve into:
+The Streamlit frontend sends this request to the backend.
+
+---
+
+# ✍️ Blog Workflow
 
 ```text
-                    Supervisor
-                        │
-        ┌───────────────┼────────────────┐
-        │               │                │
-        ▼               ▼                ▼
-      Blog            Email            Search
-      Agent           Agent             Agent
-                                        │
-                                  ┌─────┴─────┐
-                                  ▼           ▼
-                               Web Tool    RAG Tool
+Streamlit
+    │
+    ▼
+FastAPI /chat
+    │
+    ▼
+Input Safety
+    │
+    ▼
+Supervisor
+    │
+    ▼
+Blog Agent
+    │
+    ├──► Title Generation
+    │
+    └──► Content Generation
+             │
+             ▼
+       Output Safety
+             │
+             ▼
+        Streamlit UI
 ```
 
 ---
 
-# 🛡️ Security Architecture
+# 📧 Email Workflow
 
-Current security controls include:
+Example user request:
 
 ```text
-                  User Input
-                      │
-                      ▼
-              Content Safety
-                  NVIDIA
-                      │
-                      ▼
-               Agent Workflow
-                      │
-                      ▼
-               Tool Execution
-                      │
-                      ▼
-              Generated Output
-                      │
-                      ▼
-              Content Safety
-                  NVIDIA
-                      │
-                      ▼
-                  Response
+Send an email to rahul@example.com about tomorrow's meeting.
 ```
 
-Additionally:
+Flow:
 
-* API keys are loaded through environment variables.
-* OAuth credentials are kept outside Git.
-* Gmail authentication uses OAuth.
-* External email functionality is isolated through MCP.
-* Structured outputs are used for agent routing and email extraction.
+```text
+Streamlit
+    │
+    ▼
+FastAPI /chat
+    │
+    ▼
+Input Safety
+    │
+    ▼
+Supervisor
+    │
+    ▼
+Email Agent
+    │
+    ▼
+Structured Email
+    │
+    ▼
+MCP Email Tool
+    │
+    ▼
+Gmail MCP Server
+    │
+    ▼
+Gmail API
+    │
+    ▼
+Output Safety
+    │
+    ▼
+Streamlit UI
+```
+
+---
+
+# 🧠 Why Streamlit + FastAPI?
+
+The frontend and backend are intentionally separated.
+
+### Streamlit
+
+Responsible for:
+
+* User interface
+* Chat interaction
+* Input collection
+* Response rendering
+* Frontend state
+
+### FastAPI
+
+Responsible for:
+
+* API endpoints
+* Request validation
+* Agent execution
+* Safety checks
+* Backend orchestration
+
+This separation makes the application easier to:
+
+* Develop
+* Debug
+* Test
+* Deploy
+* Extend
+* Replace the frontend later
+
+For example, the Streamlit frontend can eventually be replaced by React without rewriting the agent architecture.
 
 ---
 
 # 📈 Current Implementation
 
-### ✅ Implemented
+### Frontend
+
+* [x] Streamlit interface
+* [x] Chat-based interaction
+* [x] Backend API integration
+* [x] Response rendering
+
+### Backend
 
 * [x] FastAPI backend
+* [x] `/chat` endpoint
+* [x] Request validation
 * [x] LangGraph workflow
+
+### Agent System
+
 * [x] Supervisor routing
 * [x] Blog Agent
 * [x] Email Agent
 * [x] Structured LLM outputs
 * [x] Groq LLM integration
-* [x] Gmail API integration
-* [x] MCP-based email tool
+
+### Tools
+
+* [x] MCP integration
 * [x] Gmail MCP server
-* [x] Input content-safety checking
-* [x] Output content-safety checking
-* [x] Environment-based secret management
+* [x] Gmail API integration
+
+### AI Safety
+
+* [x] NVIDIA content-safety integration
+* [x] Input safety validation
+* [x] Output safety validation
 
 ---
 
@@ -712,27 +838,38 @@ Additionally:
 * [x] Structured outputs
 * [x] MCP tool integration
 
-## Phase 2 — AI Safety & Evaluation
+## Phase 2 — Frontend
 
-* [x] NVIDIA content-safety integration
+* [x] Streamlit interface
+* [x] Conversational UI
+* [x] Backend API integration
+* [x] Response rendering
+* [ ] Streaming agent responses
+* [ ] Agent execution status
+* [ ] Conversation history
+* [ ] Better error handling
+
+## Phase 3 — AI Safety & Evaluation
+
+* [x] NVIDIA content safety
 * [x] Input safety validation
 * [x] Output safety validation
 * [ ] Prompt-injection evaluation
 * [ ] DeepEval evaluation suite
 * [ ] Automated quality evaluation
-* [ ] More granular tool authorization
+* [ ] Granular tool authorization
 
-## Phase 3 — Observability & Reliability
+## Phase 4 — Observability & Reliability
 
-* [ ] Distributed/request tracing
 * [ ] LangSmith observability
+* [ ] Distributed/request tracing
 * [ ] LLM latency monitoring
 * [ ] Error tracking
 * [ ] Retry mechanisms
 * [ ] Rate limiting
 * [ ] Response caching
 
-## Phase 4 — Advanced Agentic Capabilities
+## Phase 5 — Advanced Agentic Capabilities
 
 * [ ] Additional specialized agents
 * [ ] Long-term memory
@@ -745,25 +882,27 @@ Additionally:
 
 # 🎯 Engineering Goals
 
-AgentFlow is built as a practical exploration of modern **AI/LLM application engineering**, focusing on:
+AgentFlow is designed as a practical exploration of modern **AI/LLM application engineering**, focusing on:
 
 * Multi-agent system design
-* Agent orchestration
+* Supervisor-based orchestration
 * Graph-based workflows
 * Structured LLM outputs
 * Tool calling
-* MCP integration
+* Model Context Protocol
 * API-based AI systems
+* Streamlit application development
 * AI safety
 * Content moderation
-* Authentication and authorization
+* Authentication
+* External tool integration
 * Production-oriented architecture
 
 ---
 
 # 🚀 Future Architecture
 
-The long-term goal is to evolve AgentFlow from a simple two-agent automation system into a more complete **agentic workflow platform**:
+The long-term goal is to evolve AgentFlow into a complete agentic workflow platform.
 
 ```text
                          ┌───────────────┐
@@ -772,12 +911,18 @@ The long-term goal is to evolve AgentFlow from a simple two-agent automation sys
                                  │
                                  ▼
                         ┌─────────────────┐
+                        │ Streamlit / Web │
+                        │      UI         │
+                        └────────┬────────┘
+                                 │
+                                 ▼
+                        ┌─────────────────┐
                         │   API Gateway   │
                         └────────┬────────┘
                                  │
                                  ▼
                         ┌─────────────────┐
-                        │ Safety Layer    │
+                        │  Safety Layer   │
                         └────────┬────────┘
                                  │
                                  ▼
@@ -788,10 +933,10 @@ The long-term goal is to evolve AgentFlow from a simple two-agent automation sys
              ┌───────────────────┼───────────────────┐
              │                   │                   │
              ▼                   ▼                   ▼
-          Blog Agent         Email Agent        Search Agent
+         Blog Agent         Email Agent        Search Agent
              │                   │                   │
              ▼                   ▼                   ▼
-          Content              MCP Tools           RAG/Web
+         Content              MCP Tools           RAG/Web
              │                   │                   │
              └───────────────────┼───────────────────┘
                                  │
@@ -837,4 +982,5 @@ GitHub: [@aviral-dot](https://github.com/aviral-dot)
 If you find this project useful, consider giving the repository a ⭐.
 
 **AgentFlow — From LLM calls to controlled agentic workflows.**
+
 
