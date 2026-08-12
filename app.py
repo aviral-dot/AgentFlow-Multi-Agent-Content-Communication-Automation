@@ -225,9 +225,13 @@ async def chat(request: Request):
       
 
         return {
-            "success": True,
-            "blocked": False,
-            "data": result
+          "success": True,
+          "blocked": False,
+          "data": {
+            "response": response,
+            "route": result.get("route"),
+            "query": result.get("query")
+           }
         }
 
 
