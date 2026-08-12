@@ -1,0 +1,232 @@
+import streamlit as st
+import requests
+import time
+
+
+# ============================================================
+# CONFIG
+# ============================================================
+
+FASTAPI_URL = "http://localhost:8000"
+
+
+# ============================================================
+# PAGE CONFIG
+# ============================================================
+
+st.set_page_config(
+    page_title="Multi-Agent AI Assistant",
+    page_icon="🤖",
+    layout="centered"
+)
+
+
+# ============================================================
+# CUSTOM CSS
+# ============================================================
+
+st.markdown(
+    """
+    <style>
+        .stButton > button {
+            width: 100%;
+            font-weight: bold;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# ============================================================
+# SESSION STATE
+# ============================================================
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+
+# ============================================================
+# FUNCTIONS
+# ============================================================
+
+def check_backend():
+    """Check whether FastAPI backend is running."""
+    try:
+        response = requests.get(
+            FASTAPI_URL,
+            timeout=5
+        )
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
+
+
+def send_message(query):
+    """Send user query to FastAPI backend."""
+    try:
+        response = requests.post(
+            f"{FASTAPI_URL}/chat",
+            json={"query": query},
+            timeout=120
+        )
+
+        response.raise_for_status()
+        return response.json()
+
+    except requests.exceptions.RequestException as e:
+        return {
+            "success": False,
+            "blocked": False,
+            "error": str(e)
+        }
+
+
+# ============================================================
+# SIDEBAR
+# ============================================================
+
+with st.sidebar:
+    st.title("⚙️ System")
+
+    if check_backend():
+        st.success("🟢 FastAPI Connected")
+    else:
+        st.error("🔴 FastAPI Offline")
+
+    st.markdown("---")
+
+    st.markdown("### Architecture")
+
+    st.markdown(
+        """
+        **Streamlit**
+        ↓
+
+        **FastAPI**
+        ↓
+
+        **Content Safety**
+        ↓
+
+        **LangGraph**
+        ↓
+
+        **Multi-Agent System**
+        ↓
+
+        **Groq LLM**
+        """
+    )
+
+    st.markdown("---")
+
+    if st.button("🗑️ Clear Chat"):
+        st.session_state.messages = []
+        st.rerun()
+
+
+# ============================================================
+# HEADER
+# ============================================================
+
+st.title("🤖 Multi-Agent AI Assistant")
+
+st.markdown(
+    "Blog generation and email automation powered by LangGraph."
+)
+
+st.markdown("---")
+
+
+# ============================================================
+# DISPLAY PREVIOUS MESSAGES
+# ============================================================
+
+for message in st.session_state.messages:
+    if message["role"] == "user":
+        with st.chat_message("user"):
+            st.write(message["content"])
+    else:
+        with st.chat_message("assistant"):
+            st.write(message["content"])
+
+
+# ============================================================
+# CHAT INPUT
+# ============================================================
+
+query = st.chat_input(
+    "Ask the AI agent something..."
+)
+
+
+# ============================================================
+# PROCESS QUERY
+# ============================================================
+
+if query:
+
+    # Display user message
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": query
+        }
+    )
+
+    with st.chat_message("user"):
+        st.write(query)
+
+    # Send request to FastAPI
+    with st.chat_message("assistant"):
+
+        with st.spinner("🤔 Agents are working..."):
+            start_time = time.time()
+            result = send_message(query)
+            elapsed_time = time.time() - start_time
+
+        # Backend error
+        if result.get("error"):
+            answer = (
+                "❌ Could not connect to the FastAPI backend.\n\n"
+                f"Error: {result['error']}"
+            )
+            st.error(answer)
+
+        # Safety blocked
+        elif result.get("blocked"):
+            reason = result.get(
+                "reason",
+                "Request blocked by safety system."
+            )
+            answer = f"🛡️ {reason}"
+            st.warning(answer)
+
+        # Successful response
+        elif result.get("success"):
+            data = result.get("data", {})
+
+            answer = data.get(
+                "response",
+                "Request completed successfully."
+            )
+
+            st.markdown(answer)
+
+            st.caption(
+                f"⏱️ Response time: {elapsed_time:.2f} seconds"
+            )
+
+        # Unexpected response
+        else:
+            answer = "⚠️ Unexpected response from backend."
+            st.warning(answer)
+
+    # Save assistant response
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": answer
+        }
+    )
