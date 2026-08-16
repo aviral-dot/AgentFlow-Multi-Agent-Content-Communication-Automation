@@ -58,6 +58,7 @@ Return only the structured output.
             body=email["body"]
         )
 
+
         return {
             "response": "Email Sent Successfully",
             "tool_result": result
