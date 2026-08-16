@@ -77,7 +77,6 @@ async def chat(request: Request):
         )
 
 
-       
 
         if input_safe == False:
 

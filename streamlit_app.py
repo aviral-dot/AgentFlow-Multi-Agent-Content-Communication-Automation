@@ -22,10 +22,12 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-        .stButton > button {
-            width: 100%;
-            font-weight: bold;
-        }
+
+    .stButton > button {
+        width: 100%;
+        font-weight: bold;
+    }
+
     </style>
     """,
     unsafe_allow_html=True
@@ -42,29 +44,40 @@ if "messages" not in st.session_state:
 
 def check_backend():
     """Check whether FastAPI backend is running."""
+
     try:
         response = requests.get(
             FASTAPI_URL,
             timeout=5
         )
+
         return response.status_code == 200
+
     except requests.exceptions.RequestException:
         return False
 
 
+
+
 def send_message(query):
     """Send user query to FastAPI backend."""
+
     try:
+
         response = requests.post(
             f"{FASTAPI_URL}/chat",
-            json={"query": query},
+            json={
+                "query": query
+            },
             timeout=120
         )
 
         response.raise_for_status()
+
         return response.json()
 
     except requests.exceptions.RequestException as e:
+
         return {
             "success": False,
             "blocked": False,
@@ -75,11 +88,15 @@ def send_message(query):
 
 
 with st.sidebar:
+
     st.title("⚙️ System")
 
     if check_backend():
+
         st.success("🟢 FastAPI Connected")
+
     else:
+
         st.error("🔴 FastAPI Offline")
 
     st.markdown("---")
@@ -94,13 +111,16 @@ with st.sidebar:
         **FastAPI**
         ↓
 
-        **Content Safety**
+        **Input Guardrail**
         ↓
 
         **LangGraph**
         ↓
 
         **Multi-Agent System**
+        ↓
+
+        **Output Guardrail**
         ↓
 
         **Groq LLM**
@@ -110,7 +130,9 @@ with st.sidebar:
     st.markdown("---")
 
     if st.button("🗑️ Clear Chat"):
+
         st.session_state.messages = []
+
         st.rerun()
 
 
@@ -128,12 +150,11 @@ st.markdown("---")
 
 
 for message in st.session_state.messages:
-    if message["role"] == "user":
-        with st.chat_message("user"):
-            st.write(message["content"])
-    else:
-        with st.chat_message("assistant"):
-            st.write(message["content"])
+
+    with st.chat_message(message["role"]):
+
+        st.markdown(message["content"])
+
 
 
 
@@ -143,9 +164,11 @@ query = st.chat_input(
 
 
 
+
 if query:
 
     
+
     st.session_state.messages.append(
         {
             "role": "user",
@@ -154,54 +177,126 @@ if query:
     )
 
     with st.chat_message("user"):
-        st.write(query)
+
+        st.markdown(query)
+
 
     
+
     with st.chat_message("assistant"):
 
+        start_time = time.time()
+
         with st.spinner("🤔 Agents are working..."):
-            start_time = time.time()
+
             result = send_message(query)
-            elapsed_time = time.time() - start_time
+
+        elapsed_time = time.time() - start_time
+
 
         
+
         if result.get("error"):
+
             answer = (
-                "❌ Could not connect to the FastAPI backend.\n\n"
-                f"Error: {result['error']}"
+                "❌ **Unable to connect to the backend.**\n\n"
+                f"`{result['error']}`"
             )
+
             st.error(answer)
+
 
         
         elif result.get("blocked"):
+
+            stage = result.get(
+                "stage",
+                "security"
+            )
+
             reason = result.get(
                 "reason",
-                "Request blocked by safety system."
+                "Request blocked by security guardrail."
             )
-            answer = f"🛡️ {reason}"
+
+
+            if stage == "input":
+
+                answer = (
+                    "🛡️ **Request blocked**\n\n"
+                    "Your request was blocked by the "
+                    "**input security guardrail**."
+                )
+
+            elif stage == "output":
+
+                answer = (
+                    "🛡️ **Response blocked**\n\n"
+                    "The generated response was blocked by "
+                    "the **output security guardrail**."
+                )
+
+            else:
+
+                answer = (
+                    "🛡️ **Request blocked**\n\n"
+                    f"{reason}"
+                )
+
+
             st.warning(answer)
 
+
+            st.caption(
+                f"Security stage: `{stage}`  •  "
+                f"Response time: `{elapsed_time:.2f}s`"
+            )
+
+
         
+
         elif result.get("success"):
-            data = result.get("data", {})
+
+            data = result.get(
+                "data",
+                {}
+            )
+
 
             answer = data.get(
                 "response",
                 "Request completed successfully."
             )
 
-            st.markdown(answer)
 
-            st.caption(
-                f"⏱️ Response time: {elapsed_time:.2f} seconds"
+            route = data.get(
+                "route",
+                "unknown"
             )
 
-        
+
+            st.markdown(answer)
+
+
+            st.caption(
+                f"🤖 Agent: `{route}`  •  "
+                f"⏱️ Response time: `{elapsed_time:.2f}s`"
+            )
+
+
+       
+
         else:
-            answer = "⚠️ Unexpected response from backend."
+
+            answer = (
+                "⚠️ **Unexpected response from backend.**"
+            )
+
             st.warning(answer)
 
+
     
+
     st.session_state.messages.append(
         {
             "role": "assistant",

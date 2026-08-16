@@ -38,31 +38,33 @@ async def check_input(text: str) -> bool:
     print("\n========== RAW INPUT GUARDRAIL ==========")
     print(result)
 
-   
 
 
-    content = result.get(
-        "content",
-        ""
-    )
+    if result.get("role") == "exception":
 
+        exception_content = result.get(
+            "content",
+            {}
+        )
 
-    content = content.strip().lower()
+        exception_type = exception_content.get(
+            "type",
+            ""
+        )
 
+        if exception_type == "InputRailException":
+
+            print("🚫 INPUT BLOCKED")
+
+            return False
 
     
 
-    if content == "yes":
+    print("✅ INPUT ALLOWED")
 
-        print("🚫 INPUT BLOCKED")
+    return True
 
-        return False
 
-    if content == "no":
-
-        print("✅ INPUT ALLOWED")
-
-        return True
 
 
 async def check_output(text: str) -> bool:
@@ -81,24 +83,26 @@ async def check_output(text: str) -> bool:
 
     
 
+    if result.get("role") == "exception":
 
-    content = result.get(
-        "content",
-        ""
-    )
+        exception_content = result.get(
+            "content",
+            {}
+        )
 
+        exception_type = exception_content.get(
+            "type",
+            ""
+        )
 
-    content = content.strip().lower()
+        if exception_type == "OutputRailException":
 
+            print("🚫 OUTPUT BLOCKED")
 
-    if content == "yes":
+            return False
 
-        print("🚫 OUTPUT BLOCKED")
+    
 
-        return False
+    print("✅ OUTPUT ALLOWED")
 
-    if content == "no":
-
-        print("✅ OUTPUT ALLOWED")
-
-        return True
+    return True
