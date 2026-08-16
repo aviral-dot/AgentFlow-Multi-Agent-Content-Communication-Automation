@@ -7,9 +7,6 @@ from dotenv import load_dotenv
 from nemoguardrails import RailsConfig, LLMRails
 
 
-# ============================================================
-# ENVIRONMENT
-# ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -24,9 +21,7 @@ if not NVIDIA_API_KEY:
     )
 
 
-# ============================================================
-# GUARDRAIL CONFIGURATION
-# ============================================================
+
 
 GUARDRAIL_DIR = Path(__file__).resolve().parent
 
@@ -37,9 +32,7 @@ config = RailsConfig.from_path(
 rails = LLMRails(config)
 
 
-# ============================================================
-# INPUT SECURITY
-# ============================================================
+
 
 async def check_input(text: str) -> bool:
 
@@ -63,9 +56,7 @@ async def check_input(text: str) -> bool:
 
         print(result)
 
-        # ----------------------------------------------------
-        # NeMo rail blocked the request
-        # ----------------------------------------------------
+     
 
         if isinstance(result, dict):
 
@@ -101,13 +92,7 @@ async def check_input(text: str) -> bool:
       return False
 
 
-# ============================================================
-# OUTPUT SECURITY
-#
-# This function is for YOUR LangGraph/Groq output.
-#
-# app.py does NOT need to change.
-# ============================================================
+
 
 async def check_output(text: str) -> bool:
 
@@ -127,9 +112,7 @@ async def check_output(text: str) -> bool:
             result
         )
 
-        # ----------------------------------------------------
-        # Extract safety decision
-        # ----------------------------------------------------
+        
 
         decision = _extract_safety_decision(result)
 
@@ -166,9 +149,7 @@ async def check_output(text: str) -> bool:
         return False
 
 
-# ============================================================
-# NVIDIA CONTENT SAFETY CALL
-# ============================================================
+
 
 async def _nvidia_content_safety(
     text: str,
@@ -218,9 +199,7 @@ async def _nvidia_content_safety(
         return response.json()
 
 
-# ============================================================
-# SAFETY DECISION PARSER
-# ============================================================
+
 
 def _extract_safety_decision(
     result: dict,
@@ -256,25 +235,19 @@ def _extract_safety_decision(
             content
         )
 
-        # ----------------------------------------------------
-        # Strong unsafe indicators
-        # ----------------------------------------------------
+        
 
         if "unsafe" in content:
 
             return "unsafe"
 
-        # ----------------------------------------------------
-        # Explicit safe result
-        # ----------------------------------------------------
+        
 
         if "safe" in content:
 
             return "safe"
 
-        # ----------------------------------------------------
-        # Anything unexpected = BLOCK
-        # ----------------------------------------------------
+        
 
         return "unsafe"
 
