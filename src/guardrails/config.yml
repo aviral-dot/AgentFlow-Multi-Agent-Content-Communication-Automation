@@ -1,66 +1,34 @@
 models:
-  # ============================================================
-  # MAIN MODEL
-  # ============================================================
   - type: main
     engine: nim
     model: meta/llama-3.1-8b-instruct
 
-  # ============================================================
-  # CONTENT SAFETY
-  # ============================================================
   - type: content_safety
     engine: nim
     model: nvidia/llama-3.1-nemotron-safety-guard-8b-v3
 
-  # ============================================================
-  # TOPIC CONTROL
-  # ============================================================
   - type: topic_control
     engine: nim
     model: nvidia/llama-3.1-nemoguard-8b-topic-control
 
-  # ============================================================
-  # JAILBREAK / PROMPT INJECTION
-  # ============================================================
   - type: jailbreak_detection
     engine: nim
     model: nvidia/nemoguard-jailbreak-detect
 
-# ==============================================================
-# RAILS
-# ==============================================================
-
 rails:
-  # ============================================================
-  # INPUT SECURITY
-  # ============================================================
-
   input:
     parallel: false
 
     flows:
-      # Harmful content
       - content safety check input $model=content_safety
 
-      # Jailbreak / prompt injection
       - jailbreak detection model
 
-      # Application topic restriction
       - topic safety check input $model=topic_control
-
-  # ============================================================
-  # OUTPUT SECURITY
-  # ============================================================
 
   output:
     flows:
-      # Used when NeMo itself performs generation.
       - content safety check output $model=content_safety
-
-  # ============================================================
-  # JAILBREAK CONFIGURATION
-  # ============================================================
 
   config:
     jailbreak_detection:
@@ -69,9 +37,5 @@ rails:
       nim_server_endpoint: "/v1/security/nvidia/nemoguard-jailbreak-detect"
 
       api_key_env_var: "NVIDIA_API_KEY"
-
-# ==============================================================
-# EXCEPTIONS
-# ==============================================================
 
 enable_rails_exceptions: true

@@ -8,7 +8,11 @@ from src.states.blogstate import AgentState
 class SupervisorDecision(BaseModel):
 
     route: Literal["blog", "email"] = Field(
-        description="The agent that should execute the request"
+        description=(
+            "Routing decision. "
+            "Must be exactly lowercase "
+            "'blog' or 'email'."
+        )
     )
 
 

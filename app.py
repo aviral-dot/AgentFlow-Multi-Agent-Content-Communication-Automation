@@ -1,7 +1,9 @@
 import uvicorn
+import uuid
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
+from langgraph.types import Command
 
 from src.graphs.graph_builder import GraphBuilder
 from src.llms.groqllm import GroqLLM
@@ -10,12 +12,16 @@ from src.guardrails.guardrail import (
     check_output,
 )
 
+
 load_dotenv()
+
 
 app = FastAPI(
     title="Blog and Email Multi-Agent API",
     version="1.0.0"
 )
+
+
 
 
 groqllm = GroqLLM()
@@ -31,12 +37,14 @@ graph = graph_builder.setup_graph()
 
 
 
+
 @app.get("/")
 async def root():
 
     return {
         "message": "Multi-Agent AI System is running"
     }
+
 
 
 
@@ -55,8 +63,6 @@ async def chat(request: Request):
         ).strip()
 
 
-    
-
         if not query:
 
             raise HTTPException(
@@ -65,9 +71,10 @@ async def chat(request: Request):
             )
 
 
-    
-
-        print("\n========== INPUT SECURITY ==========")
+        
+        print(
+            "\n========== INPUT SECURITY =========="
+        )
 
         input_safe = await check_input(query)
 
@@ -77,8 +84,7 @@ async def chat(request: Request):
         )
 
 
-
-        if input_safe == False:
+        if input_safe is False:
 
             print(
                 "🚫 INPUT BLOCKED"
@@ -101,6 +107,18 @@ async def chat(request: Request):
 
 
         
+        thread_id = str(
+            uuid.uuid4()
+        )
+
+        config = {
+            "configurable": {
+                "thread_id": thread_id
+            }
+        }
+
+
+
         print(
             "\n========== LANGGRAPH =========="
         )
@@ -108,8 +126,10 @@ async def chat(request: Request):
         result = await graph.ainvoke(
             {
                 "query": query
-            }
+            },
+            config=config
         )
+
 
         print(
             "FULL GRAPH RESULT:"
@@ -119,12 +139,45 @@ async def chat(request: Request):
 
 
 
+        if "__interrupt__" in result:
+
+            interrupt_data = (
+                result["__interrupt__"][0].value
+            )
+
+
+            print(
+                "\n========== HUMAN APPROVAL =========="
+            )
+
+            print(
+                "THREAD ID:",
+                thread_id
+            )
+
+            print(
+                "APPROVAL DATA:",
+                interrupt_data
+            )
+
+
+            return {
+                "success": True,
+                "blocked": False,
+                "status": "approval_required",
+                "thread_id": thread_id,
+                "approval": interrupt_data
+            }
+
+
+
         if result.get("route") == "blog":
 
             blog_data = result.get(
                 "blog",
                 {}
             )
+
 
             title = blog_data.get(
                 "title",
@@ -136,23 +189,21 @@ async def chat(request: Request):
                 ""
             )
 
+
             response = (
                 f"# {title}\n\n"
                 f"{content}"
             )
 
 
+
         elif result.get("route") == "email":
 
-            email_data = result.get(
-                "email",
-                {}
+            response = result.get(
+                "response",
+                "Email completed successfully."
             )
 
-            response = email_data.get(
-                "content",
-                "Email generated successfully."
-            )
 
 
         else:
@@ -162,6 +213,7 @@ async def chat(request: Request):
             )
 
 
+
         print(
             "\n========== GRAPH RESPONSE =========="
         )
@@ -169,7 +221,6 @@ async def chat(request: Request):
         print(response)
 
 
-        
 
         print(
             "\n========== OUTPUT SECURITY =========="
@@ -179,15 +230,14 @@ async def chat(request: Request):
             response
         )
 
+
         print(
             "OUTPUT SAFE:",
             output_safe
         )
 
 
-    
-
-        if output_safe == False:
+        if output_safe is False:
 
             print(
                 "🚫 OUTPUT BLOCKED"
@@ -209,24 +259,23 @@ async def chat(request: Request):
         )
 
 
-    
+
         return {
             "success": True,
             "blocked": False,
+            "status": "completed",
             "data": {
                 "response": response,
                 "route": result.get("route"),
-                "query": result.get("query")
+                "query": result.get("query"),
+                "thread_id": thread_id
             }
         }
 
 
-    
-
     except HTTPException:
 
         raise
-
 
 
     except Exception as e:
@@ -242,6 +291,189 @@ async def chat(request: Request):
             "error": str(e)
         }
 
+
+
+
+@app.post("/email/approval")
+async def email_approval(
+    request: Request
+):
+
+    try:
+
+       
+
+        data = await request.json()
+
+        thread_id = data.get(
+            "thread_id"
+        )
+
+        decision = data.get(
+            "decision"
+        )
+
+
+        if not thread_id:
+
+            raise HTTPException(
+                status_code=400,
+                detail="thread_id is required"
+            )
+
+
+        if decision not in [
+            "approve",
+            "reject"
+        ]:
+
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "decision must be "
+                    "'approve' or 'reject'"
+                )
+            )
+
+
+        print(
+            "\n========== HUMAN DECISION =========="
+        )
+
+        print(
+            "THREAD ID:",
+            thread_id
+        )
+
+        print(
+            "DECISION:",
+            decision
+        )
+
+
+
+        config = {
+            "configurable": {
+                "thread_id": thread_id
+            }
+        }
+
+
+
+        result = await graph.ainvoke(
+            Command(
+                resume=decision
+            ),
+            config=config
+        )
+
+
+        print(
+            "\n========== RESUMED GRAPH =========="
+        )
+
+        print(result)
+
+
+        if decision == "reject":
+
+            print(
+                "❌ EMAIL REJECTED"
+            )
+
+            return {
+                "success": True,
+                "blocked": False,
+                "status": "rejected",
+                "thread_id": thread_id,
+                "message": (
+                    "Email rejected. "
+                    "Nothing was sent."
+                )
+            }
+
+
+
+        print(
+            "✅ EMAIL APPROVED"
+        )
+
+
+        if "__interrupt__" in result:
+
+            interrupt_data = (
+                result["__interrupt__"][0].value
+            )
+
+            return {
+                "success": True,
+                "blocked": False,
+                "status": "approval_required",
+                "thread_id": thread_id,
+                "approval": interrupt_data
+            }
+
+
+        response = result.get(
+            "response",
+            "Email sent successfully."
+        )
+
+
+        output_safe = await check_output(
+            response
+        )
+
+
+        if output_safe is False:
+
+            print(
+                "🚫 OUTPUT BLOCKED"
+            )
+
+            return {
+                "success": False,
+                "blocked": True,
+                "stage": "output",
+                "thread_id": thread_id,
+                "reason": (
+                    "Generated response blocked "
+                    "by security guardrail"
+                )
+            }
+
+
+
+        return {
+            "success": True,
+            "blocked": False,
+            "status": "completed",
+            "thread_id": thread_id,
+            "data": {
+                "response": response,
+                "route": result.get("route")
+            }
+        }
+
+
+    except HTTPException:
+
+        raise
+
+
+    except Exception as e:
+
+        print(
+            "\nAPPROVAL ERROR:",
+            str(e)
+        )
+
+        return {
+            "success": False,
+            "blocked": False,
+            "status": "error",
+            "error": str(e)
+        }
 
 
 

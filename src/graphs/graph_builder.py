@@ -2,6 +2,7 @@ from langgraph.graph import StateGraph, START, END
 
 from src.llms.groqllm import GroqLLM
 from src.states.blogstate import AgentState
+from langgraph.checkpoint.memory import InMemorySaver
 
 from src.nodes.blog_node import BlogNode
 from src.nodes.mail_node import EmailNode
@@ -49,6 +50,11 @@ class GraphBuilder:
         )
 
         self.graph.add_node(
+           "approve_email",
+           self.email_node.approve_email
+        )
+
+        self.graph.add_node(
             "send_email",
             self.email_node.send_email
         )
@@ -82,9 +88,23 @@ class GraphBuilder:
         )
 
 
+        # self.graph.add_edge(
+        #     "draft_email",
+        #     "send_email"
+        # )
+
         self.graph.add_edge(
-            "draft_email",
-            "send_email"
+          "draft_email",
+          "approve_email"
+        )
+
+        self.graph.add_conditional_edges(
+           "approve_email",
+           self.route_after_approval,
+           {
+              "send_email": "send_email",
+               "end": END
+            }
         )
 
         self.graph.add_edge(
@@ -100,12 +120,20 @@ class GraphBuilder:
 
         return state["route"]
 
+    def route_after_approval(self, state: AgentState):
+
+      if state["approval"] == "approve":
+         return "send_email"
+
+      return "end"
+
  
 
     def setup_graph(self):
 
         graph = self.build_graph()
+        checkpointer = InMemorySaver()
+        return graph.compile( checkpointer=checkpointer)
 
-        return graph.compile()
 
-graph = GraphBuilder(GroqLLM().get_llm()).setup_graph()
+
