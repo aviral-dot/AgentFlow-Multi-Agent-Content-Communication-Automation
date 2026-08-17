@@ -108,3 +108,4 @@ class GraphBuilder:
 
         return graph.compile()
 
+graph = GraphBuilder(GroqLLM().get_llm()).setup_graph()
