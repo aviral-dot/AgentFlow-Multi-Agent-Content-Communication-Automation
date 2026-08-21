@@ -24,10 +24,7 @@ class LLMGateway:
                     "api_key": self._get_api_key(
                         LLMGatewayConfig.PRIMARY_MODEL
                     ),
-                },
-                "model_info": {
-                    "id": "primary-llm",
-                },
+                }
             }
         ]
 
@@ -43,10 +40,7 @@ class LLMGateway:
                         "api_key": self._get_api_key(
                             LLMGatewayConfig.FALLBACK_MODEL
                         ),
-                    },
-                    "model_info": {
-                        "id": "fallback-llm",
-                    },
+                    }
                 }
             )
 
