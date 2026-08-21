@@ -9,7 +9,7 @@ class BlogNode:
         self.llm=llm
 
     
-    def title_creation(self,state:AgentState):
+    async def title_creation(self,state:AgentState):
         """
         create the title for the blog
         """
@@ -23,14 +23,14 @@ class BlogNode:
             
             sytem_message=prompt.format(query=state["query"])
             print(sytem_message)
-            response=self.llm.invoke(sytem_message)
+            response=await self.llm.ainvoke(sytem_message)
             print(response)
             return {"blog":{"title":response.content}}
         
-    def content_generation(self,state:AgentState):
+    async def content_generation(self,state:AgentState):
         if "query" in state and state["query"]:
             system_prompt = """You are expert blog writer. Use Markdown formatting.
             Generate a detailed blog content with detailed breakdown for the {query}"""
             system_message = system_prompt.format(query=state["query"])
-            response = self.llm.invoke(system_message)
+            response =await self.llm.ainvoke(system_message)
             return {"blog": {"title": state['blog']['title'], "content": response.content}}

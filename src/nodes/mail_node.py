@@ -92,7 +92,7 @@ class EmailNode:
             method="json_mode"
         )
 
-    def draft_email(self, state: AgentState):
+    async def draft_email(self, state: AgentState):
 
         query = state["query"]
 
@@ -122,7 +122,7 @@ Do not return explanations.
 Do not return any text outside the JSON.
 """
 
-        draft = self.structured_llm.invoke(prompt)
+        draft = await self.structured_llm.ainvoke(prompt)
 
         return {
             "email": {

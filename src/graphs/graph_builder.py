@@ -2,7 +2,7 @@ from langgraph.graph import StateGraph, START, END
 
 
 from src.states.blogstate import AgentState
-from langgraph.checkpoint.memory import InMemorySaver
+
 
 from src.nodes.blog_node import BlogNode
 from src.nodes.mail_node import EmailNode
@@ -132,8 +132,7 @@ class GraphBuilder:
     def setup_graph(self):
 
         graph = self.build_graph()
-        checkpointer = InMemorySaver()
-        return graph.compile( checkpointer=checkpointer)
+        return graph.compile()
 
 
 

@@ -2,14 +2,14 @@ import base64
 from pathlib import Path
 from email.mime.text import MIMEText
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 
 
 
-mcp = FastMCP("gmail-server")
+mcp = MCPServer("gmail-server")
 
 
 

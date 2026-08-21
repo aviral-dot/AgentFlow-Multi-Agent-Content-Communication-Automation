@@ -26,7 +26,7 @@ class SupervisorNode:
             SupervisorDecision
         )
 
-    def decide(self, state: AgentState):
+    async def decide(self, state: AgentState):
 
         query = state["query"]
 
@@ -54,7 +54,7 @@ Rules:
   choose BLOG.
 """
 
-        decision = self.structured_llm.invoke(prompt)
+        decision =await self.structured_llm.ainvoke(prompt)
 
         return {
             "route": decision.route
