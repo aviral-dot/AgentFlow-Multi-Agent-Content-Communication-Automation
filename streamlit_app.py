@@ -1,8 +1,7 @@
 import streamlit as st
 import requests
 import time
-
-
+import uuid
 
 
 FASTAPI_URL = "http://localhost:8000"
@@ -13,8 +12,6 @@ st.set_page_config(
     page_icon="🤖",
     layout="centered"
 )
-
-
 
 
 st.markdown(
@@ -32,6 +29,9 @@ st.markdown(
 )
 
 
+# ============================================================
+# SESSION STATE
+# ============================================================
 
 if "messages" not in st.session_state:
 
@@ -43,6 +43,16 @@ if "pending_approval" not in st.session_state:
     st.session_state.pending_approval = None
 
 
+# Create ONE thread ID for the current conversation.
+# It survives Streamlit reruns.
+if "thread_id" not in st.session_state:
+
+    st.session_state.thread_id = str(uuid.uuid4())
+
+
+# ============================================================
+# BACKEND HEALTH CHECK
+# ============================================================
 
 def check_backend():
     """Check whether FastAPI backend is running."""
@@ -61,7 +71,9 @@ def check_backend():
         return False
 
 
-
+# ============================================================
+# SEND CHAT MESSAGE
+# ============================================================
 
 def send_message(query):
     """Send user query to FastAPI backend."""
@@ -71,7 +83,8 @@ def send_message(query):
         response = requests.post(
             f"{FASTAPI_URL}/chat",
             json={
-                "query": query
+                "query": query,
+                "thread_id": st.session_state.thread_id
             },
             timeout=120
         )
@@ -89,6 +102,9 @@ def send_message(query):
         }
 
 
+# ============================================================
+# EMAIL APPROVAL
+# ============================================================
 
 def send_email_decision(
     thread_id,
@@ -120,7 +136,9 @@ def send_email_decision(
         }
 
 
-
+# ============================================================
+# SIDEBAR
+# ============================================================
 
 with st.sidebar:
 
@@ -176,6 +194,15 @@ with st.sidebar:
     st.markdown("---")
 
 
+    # Display current conversation/thread ID
+    st.caption(
+        f"Conversation ID: `{st.session_state.thread_id}`"
+    )
+
+
+    st.markdown("---")
+
+
     if st.button(
         "🗑️ Clear Chat"
     ):
@@ -184,9 +211,15 @@ with st.sidebar:
 
         st.session_state.pending_approval = None
 
+        # Start a completely new conversation
+        st.session_state.thread_id = str(uuid.uuid4())
+
         st.rerun()
 
 
+# ============================================================
+# MAIN UI
+# ============================================================
 
 st.title(
     "🤖 Multi-Agent AI Assistant"
@@ -201,7 +234,9 @@ st.markdown(
 st.markdown("---")
 
 
-
+# ============================================================
+# DISPLAY CHAT HISTORY
+# ============================================================
 
 for message in st.session_state.messages:
 
@@ -214,7 +249,9 @@ for message in st.session_state.messages:
         )
 
 
-
+# ============================================================
+# HUMAN APPROVAL UI
+# ============================================================
 
 if st.session_state.pending_approval:
 
@@ -250,20 +287,15 @@ if st.session_state.pending_approval:
     )
 
 
-
     st.markdown(
         f"**To:** `{email.get('to', '')}`"
     )
 
 
-  
-
     st.markdown(
         f"**Subject:** {email.get('subject', '')}"
     )
 
-
-   
 
     st.markdown(
         "**Body:**"
@@ -290,7 +322,6 @@ if st.session_state.pending_approval:
     st.markdown("---")
 
 
-
     col1, col2 = st.columns(2)
 
 
@@ -312,6 +343,9 @@ if st.session_state.pending_approval:
         )
 
 
+    # ========================================================
+    # APPROVE
+    # ========================================================
 
     if approve_clicked:
 
@@ -363,7 +397,9 @@ if st.session_state.pending_approval:
             )
 
 
-    
+    # ========================================================
+    # REJECT
+    # ========================================================
 
     if reject_clicked:
 
@@ -415,13 +451,13 @@ if st.session_state.pending_approval:
             )
 
 
-
+# ============================================================
+# CHAT INPUT
+# ============================================================
 
 query = st.chat_input(
     "Ask assisstant something..."
 )
-
-
 
 
 if query:
@@ -460,6 +496,9 @@ if query:
         )
 
 
+    # --------------------------------------------------------
+    # Process request
+    # --------------------------------------------------------
 
     with st.chat_message(
         "assistant"
@@ -482,7 +521,9 @@ if query:
         )
 
 
-        
+        # ====================================================
+        # BACKEND ERROR
+        # ====================================================
 
         if result.get(
             "error"
@@ -499,6 +540,9 @@ if query:
             )
 
 
+        # ====================================================
+        # SECURITY BLOCK
+        # ====================================================
 
         elif result.get(
             "blocked"
@@ -553,6 +597,9 @@ if query:
             )
 
 
+        # ====================================================
+        # HUMAN APPROVAL REQUIRED
+        # ====================================================
 
         elif (
             result.get("success")
@@ -560,8 +607,6 @@ if query:
             result.get("status")
             == "approval_required"
         ):
-
-            
 
             st.session_state.pending_approval = result
 
@@ -583,6 +628,9 @@ if query:
             )
 
 
+        # ====================================================
+        # SUCCESS
+        # ====================================================
 
         elif result.get(
             "success"
@@ -617,7 +665,9 @@ if query:
             )
 
 
-        
+        # ====================================================
+        # UNEXPECTED RESPONSE
+        # ====================================================
 
         else:
 
@@ -631,7 +681,9 @@ if query:
             )
 
 
-    
+    # --------------------------------------------------------
+    # Store assistant response
+    # --------------------------------------------------------
 
     st.session_state.messages.append(
         {
@@ -641,6 +693,9 @@ if query:
     )
 
 
+    # --------------------------------------------------------
+    # Rerun to show approval UI
+    # --------------------------------------------------------
 
     if result.get(
         "status"

@@ -1,5 +1,4 @@
 import os
-import uuid
 import asyncio
 
 
@@ -150,12 +149,23 @@ async def chat(request: Request):
             ""
         ).strip()
 
+        thread_id = data.get(
+          "thread_id"
+        )
+
         if not query:
 
             raise HTTPException(
                 status_code=400,
                 detail="Query is required"
             )
+
+        if not thread_id:
+
+            raise HTTPException(
+            status_code=400,
+            detail="thread_id is required"
+        )
 
         # ----------------------------------------------------
         # INPUT SECURITY
@@ -193,12 +203,9 @@ async def chat(request: Request):
         )
 
         # ----------------------------------------------------
-        # CREATE NEW WORKFLOW THREAD
+        # CREATE existing WORKFLOW THREAD
         # ----------------------------------------------------
 
-        thread_id = str(
-            uuid.uuid4()
-        )
 
         config = {
             "configurable": {
