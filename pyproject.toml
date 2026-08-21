@@ -21,6 +21,7 @@ dependencies = [
     "litellm>=1.97.0",
     "mcp>=2.0.0",
     "nemoguardrails>=0.23.0",
+    "streamlit>=1.62.0",
     "uvicorn>=0.34.3",
     "watchdog>=6.0.0",
 ]

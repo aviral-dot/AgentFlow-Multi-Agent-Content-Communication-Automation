@@ -647,5 +647,3 @@ if query:
     ) == "approval_required":
 
         st.rerun()
-
-

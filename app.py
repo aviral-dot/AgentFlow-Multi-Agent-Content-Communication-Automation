@@ -23,6 +23,7 @@ app = FastAPI(
 
 
 
+print("\n========== INITIALIZING LLM GATEWAY ==========")
 
 llm_gateway = LLMGateway()
 
@@ -30,6 +31,9 @@ llm = llm_gateway.get_llm(
     model_name="primary",
     temperature=0.2,
 )
+
+print("✅ LLM Gateway initialized")
+print("✅ Primary LLM initialized")
 
 
 
@@ -488,5 +492,6 @@ if __name__ == "__main__":
         port=8000,
         reload=False
     )
+    
     
 
