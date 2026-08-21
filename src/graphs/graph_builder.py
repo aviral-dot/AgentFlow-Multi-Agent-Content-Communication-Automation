@@ -11,13 +11,13 @@ from src.nodes.supervisor_node import SupervisorNode
 
 class GraphBuilder:
 
-    def __init__(self, llm):
+    def __init__(self, llm, checkpointer):
 
         self.llm = llm
 
         
         self.graph = StateGraph(AgentState)
-
+        self.checkpointer = checkpointer
         
         self.blog_node = BlogNode(self.llm)
         self.email_node = EmailNode(self.llm)
@@ -132,7 +132,7 @@ class GraphBuilder:
     def setup_graph(self):
 
         graph = self.build_graph()
-        return graph.compile()
+        return graph.compile(checkpointer=self.checkpointer)
 
 
 
