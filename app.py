@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Request
 from langgraph.types import Command
 
 from src.graphs.graph_builder import GraphBuilder
-from src.llms.groqllm import GroqLLM
+from src.gateway.llm_gateway import LLMGateway
 from src.guardrails.guardrail import (
     check_input,
     check_output,
@@ -24,9 +24,12 @@ app = FastAPI(
 
 
 
-groqllm = GroqLLM()
+llm_gateway = LLMGateway()
 
-llm = groqllm.get_llm()
+llm = llm_gateway.get_llm(
+    model_name="primary",
+    temperature=0.2,
+)
 
 
 
