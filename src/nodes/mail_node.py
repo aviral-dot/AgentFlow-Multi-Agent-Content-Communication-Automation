@@ -1,24 +1,34 @@
-
-from pydantic import BaseModel, EmailStr, Field
+import logging
+from time import perf_counter
 
 from langgraph.types import interrupt
+from pydantic import BaseModel, EmailStr, Field
 
 from src.states.blogstate import AgentState
 from src.tools.email_tool import EmailTool
+from src.utils.loggers import (
+    get_logger,
+    log_event,
+)
+
+logger = get_logger(__name__)
 
 
 class EmailDraft(BaseModel):
     model_config = {
         "str_strip_whitespace": True
     }
+
     to: EmailStr
+
     subject: str = Field(
         min_length=1,
-        max_length=200
+        max_length=200,
     )
+
     body: str = Field(
         min_length=1,
-        max_length=10000
+        max_length=10000,
     )
 
 
@@ -27,14 +37,30 @@ class EmailNode:
     def __init__(self, llm):
 
         self.llm = llm
+
         self.email_tool = EmailTool()
 
-        self.structured_llm = llm.with_structured_output(
-            EmailDraft,
-            method="json_mode"
+        self.structured_llm = (
+            llm.with_structured_output(
+                EmailDraft,
+                method="json_mode",
+            )
         )
 
-    async def draft_email(self, state: AgentState):
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="email_node_initialized",
+        )
+
+    # ========================================================
+    # EMAIL DRAFT GENERATION
+    # ========================================================
+
+    async def draft_email(
+        self,
+        state: AgentState,
+    ):
 
         query = state["query"]
 
@@ -64,53 +90,167 @@ Do not return explanations.
 Do not return any text outside the JSON.
 """
 
-        draft = await self.structured_llm.ainvoke(prompt)
+        generation_started = perf_counter()
+
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="email_draft_generation_started",
+        )
+
+        try:
+
+            draft = await self.structured_llm.ainvoke(
+                prompt
+            )
+
+        except Exception:
+
+            latency_ms = round(
+                (perf_counter() - generation_started) * 1000,
+                2,
+            )
+
+            logger.exception(
+                "Email draft generation failed",
+                extra={
+                    "event": "email_draft_generation_failed",
+                    "context": {
+                        "latency_ms": latency_ms,
+                    },
+                },
+            )
+
+            raise
+
+        latency_ms = round(
+            (perf_counter() - generation_started) * 1000,
+            2,
+        )
+
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="email_draft_generation_completed",
+            latency_ms=latency_ms,
+            status="success",
+        )
 
         return {
             "email": {
-                "to": draft.to,
+                "to": str(draft.to),
                 "subject": draft.subject,
-                "body": draft.body
+                "body": draft.body,
             }
         }
 
-    def approve_email(self, state: AgentState):
+    # ========================================================
+    # HUMAN APPROVAL
+    # ========================================================
+
+    def approve_email(
+        self,
+        state: AgentState,
+    ):
 
         email = state["email"]
+
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="email_approval_requested",
+        )
 
         decision = interrupt(
             {
                 "type": "email_approval",
-                "message": "Please approve or reject this email before sending.",
+                "message": (
+                    "Please approve or reject "
+                    "this email before sending."
+                ),
                 "email": {
                     "to": email["to"],
                     "subject": email["subject"],
-                    "body": email["body"]
-                }
+                    "body": email["body"],
+                },
             }
         )
 
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="email_approval_decision_received",
+            decision=decision,
+        )
+
         return {
-            "approval": decision
+            "approval": decision,
         }
 
-    async def send_email(self, state: AgentState):
+    # ========================================================
+    # SEND EMAIL
+    # ========================================================
 
-        email = EmailDraft.model_validate(state["email"])
+    async def send_email(
+        self,
+        state: AgentState,
+    ):
 
-        result = await self.email_tool.send(
-        to=str(email.to),
-        subject=email.subject,
-        body=email.body
-         )
+        email = EmailDraft.model_validate(
+            state["email"]
+        )
 
-        return {
-        "response": "Email Sent Successfully",
-        "tool_result": result
-         }     
+        send_started = perf_counter()
+
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="email_send_started",
+        )
+
+        try:
+
+            result = await self.email_tool.send(
+                to=str(email.to),
+                subject=email.subject,
+                body=email.body,
+            )
+
+        except Exception:
+
+            latency_ms = round(
+                (perf_counter() - send_started) * 1000,
+                2,
+            )
+
+            logger.exception(
+                "Email sending failed",
+                extra={
+                    "event": "email_send_failed",
+                    "context": {
+                        "latency_ms": latency_ms,
+                    },
+                },
+            )
+
+            raise
+
+        latency_ms = round(
+            (perf_counter() - send_started) * 1000,
+            2,
+        )
+
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="email_send_completed",
+            latency_ms=latency_ms,
+            status="success",
+        )
 
         return {
             "response": "Email Sent Successfully",
-            "tool_result": result
+            "tool_result": result,
         }
+
     

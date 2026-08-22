@@ -1,13 +1,11 @@
 import base64
-from pathlib import Path
 from email.mime.text import MIMEText
+from pathlib import Path
 
-from mcp.server.mcpserver import MCPServer
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-
-
-
+from googleapiclient.errors import HttpError
+from mcp.server.mcpserver import MCPServer
 
 mcp = MCPServer("gmail-server")
 
@@ -115,15 +113,16 @@ def send_email(
             "message_id": result.get("id"),
         }
 
-    except Exception as e:
-
-       
-
-        return {
-            "success": False,
-            "message": str(e),
-        }
-
+    except (
+        FileNotFoundError,
+        ValueError,
+        OSError,
+        HttpError
+    ):
+      return {
+        "success": False,
+        "message": "Unable to send email.",
+      }    
 
 
 

@@ -1,19 +1,37 @@
-from pathlib import Path
+import logging
 import os
-import json
+from pathlib import Path
+from time import perf_counter
 
 import httpx
 from dotenv import load_dotenv
-from nemoguardrails import RailsConfig, LLMRails
+from nemoguardrails import LLMRails, RailsConfig
+
+from src.utils.loggers import (
+    get_logger,
+    log_event,
+)
+
+# ============================================================
+# LOGGER
+# ============================================================
+
+logger = get_logger(__name__)
 
 
+# ============================================================
+# ENVIRONMENT
+# ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-load_dotenv(PROJECT_ROOT / ".env")
+load_dotenv(
+    PROJECT_ROOT / ".env"
+)
 
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
-
+NVIDIA_API_KEY = os.getenv(
+    "NVIDIA_API_KEY"
+)
 
 if not NVIDIA_API_KEY:
     raise RuntimeError(
@@ -21,7 +39,9 @@ if not NVIDIA_API_KEY:
     )
 
 
-
+# ============================================================
+# GUARDRAIL CONFIGURATION
+# ============================================================
 
 GUARDRAIL_DIR = Path(__file__).resolve().parent
 
@@ -32,12 +52,46 @@ config = RailsConfig.from_path(
 rails = LLMRails(config)
 
 
+log_event(
+    logger,
+    level=logging.INFO,
+    event="guardrails_initialized",
+)
 
 
-async def check_input(text: str) -> bool:
+# ============================================================
+# INPUT GUARDRAIL
+# ============================================================
+
+async def check_input(
+    text: str,
+) -> bool:
+    """
+    Validate user input using NeMo Guardrails.
+
+    Returns:
+        True  -> input is allowed
+        False -> input is blocked or guardrail failed
+    """
 
     if not text or not text.strip():
+
+        log_event(
+            logger,
+            level=logging.WARNING,
+            event="input_guardrail_rejected",
+            reason="empty_input",
+        )
+
         return False
+
+    started = perf_counter()
+
+    log_event(
+        logger,
+        level=logging.INFO,
+        event="input_guardrail_started",
+    )
 
     try:
 
@@ -50,115 +104,210 @@ async def check_input(text: str) -> bool:
             ]
         )
 
-        print(
-            "\n========== INPUT GUARDRAIL =========="
+        # ----------------------------------------------------
+        # CHECK GUARDRAIL RESPONSE
+        # ----------------------------------------------------
+
+        if (
+           isinstance(result, dict)
+           and result.get("role") == "exception"
+        ):
+            latency_ms = round(
+               (
+                   perf_counter()
+                   - started
+               )
+               * 1000,
+               2,
+            )
+       
+            log_event(
+                logger,
+                level=logging.WARNING,
+                event="input_guardrail_blocked",
+                reason="guardrail_exception",
+                latency_ms=latency_ms,
+            )
+
+            return False
+
+        # ----------------------------------------------------
+        # INPUT PASSED
+        # ----------------------------------------------------
+
+        latency_ms = round(
+            (
+                perf_counter()
+                - started
+            )
+            * 1000,
+            2,
         )
 
-        print(result)
-
-     
-
-        if isinstance(result, dict):
-
-            if result.get("role") == "exception":
-
-                print(
-                    "🚫 INPUT BLOCKED BY GUARDRAIL"
-                )
-
-                return False
-
-        print(
-            "✅ INPUT PASSED SECURITY"
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="input_guardrail_passed",
+            latency_ms=latency_ms,
+            status="success",
         )
 
         return True
 
-    except Exception as e:
+    except Exception:
 
-      print("\n" + "=" * 80)
-      print("🚨 INPUT GUARDRAIL EXCEPTION")
-      print("=" * 80)
+        latency_ms = round(
+            (
+                perf_counter()
+                - started
+            )
+            * 1000,
+            2,
+        )
 
-      print("TYPE:")
-      print(type(e).__name__)
+        logger.exception(
+            "Input guardrail execution failed",
+            extra={
+                "event": "input_guardrail_failed",
+                "context": {
+                    "latency_ms": latency_ms,
+                },
+            },
+        )
 
-      print("\nMESSAGE:")
-      print(str(e))
+        # ----------------------------------------------------
+        # FAIL CLOSED
+        # ----------------------------------------------------
 
-      print("\nREPR:")
-      print(repr(e))
-
-      return False
+        return False
 
 
+# ============================================================
+# OUTPUT GUARDRAIL
+# ============================================================
 
+async def check_output(
+    text: str,
+) -> bool:
+    """
+    Validate generated application output.
 
-async def check_output(text: str) -> bool:
+    Returns:
+        True  -> output is safe
+        False -> output is unsafe or validation failed
+    """
 
     if not text or not text.strip():
+
+        log_event(
+            logger,
+            level=logging.WARNING,
+            event="output_guardrail_rejected",
+            reason="empty_output",
+        )
+
         return False
+
+    started = perf_counter()
+
+    log_event(
+        logger,
+        level=logging.INFO,
+        event="output_guardrail_started",
+    )
 
     try:
 
-        print(
-            "\n========== OUTPUT SAFETY =========="
+        result = await _nvidia_content_safety(
+            text
         )
 
-        result = await _nvidia_content_safety(text)
-
-        print(
-            "NVIDIA SAFETY RESULT:",
+        decision = _extract_safety_decision(
             result
         )
 
-        
-
-        decision = _extract_safety_decision(result)
-
-        print(
-            "OUTPUT DECISION:",
-            decision
+        latency_ms = round(
+            (
+                perf_counter()
+                - started
+            )
+            * 1000,
+            2,
         )
+
+        # ----------------------------------------------------
+        # SAFE OUTPUT
+        # ----------------------------------------------------
 
         if decision == "safe":
 
-            print(
-                "✅ OUTPUT PASSED SECURITY"
+            log_event(
+                logger,
+                level=logging.INFO,
+                event="output_guardrail_passed",
+                decision="safe",
+                latency_ms=latency_ms,
+                status="success",
             )
 
             return True
 
-        print(
-            "🚫 OUTPUT BLOCKED"
+        # ----------------------------------------------------
+        # UNSAFE OUTPUT
+        # ----------------------------------------------------
+
+        log_event(
+            logger,
+            level=logging.WARNING,
+            event="output_guardrail_blocked",
+            decision="unsafe",
+            latency_ms=latency_ms,
+            status="blocked",
         )
 
         return False
 
-    except Exception as e:
+    except Exception:
 
-        print(
-            "\n🚫 OUTPUT SECURITY ERROR"
+        latency_ms = round(
+            (
+                perf_counter()
+                - started
+            )
+            * 1000,
+            2,
         )
 
-        print(
-            f"Reason: {e}"
+        logger.exception(
+            "Output guardrail execution failed",
+            extra={
+                "event": "output_guardrail_failed",
+                "context": {
+                    "latency_ms": latency_ms,
+                },
+            },
         )
 
-        # Fail closed.
+        # ----------------------------------------------------
+        # FAIL CLOSED
+        # ----------------------------------------------------
+
         return False
 
 
-
+# ============================================================
+# NVIDIA CONTENT SAFETY
+# ============================================================
 
 async def _nvidia_content_safety(
     text: str,
 ):
     """
-    Send already-generated LangGraph/Groq output
-    to NVIDIA's Content Safety NIM.
+    Send generated application output to
+    NVIDIA Content Safety NIM.
 
-    This is separate from NeMo's generation pipeline.
+    The generated text itself is intentionally
+    not logged.
     """
 
     url = (
@@ -166,13 +315,16 @@ async def _nvidia_content_safety(
     )
 
     headers = {
-        "Authorization": f"Bearer {NVIDIA_API_KEY}",
+        "Authorization": (
+            f"Bearer {NVIDIA_API_KEY}"
+        ),
         "Content-Type": "application/json",
     }
 
     payload = {
         "model": (
-            "nvidia/llama-3.1-nemotron-safety-guard-8b-v3"
+            "nvidia/"
+            "llama-3.1-nemotron-safety-guard-8b-v3"
         ),
         "messages": [
             {
@@ -184,32 +336,94 @@ async def _nvidia_content_safety(
         "max_tokens": 100,
     }
 
-    async with httpx.AsyncClient(
-        timeout=30.0
-    ) as client:
+    request_started = perf_counter()
 
-        response = await client.post(
-            url,
-            headers=headers,
-            json=payload,
+    log_event(
+        logger,
+        level=logging.INFO,
+        event="nvidia_content_safety_request_started",
+    )
+
+    try:
+
+        async with httpx.AsyncClient(
+            timeout=30.0
+        ) as client:
+
+            response = await client.post(
+                url,
+                headers=headers,
+                json=payload,
+            )
+
+            response.raise_for_status()
+
+            result = response.json()
+
+        latency_ms = round(
+            (
+                perf_counter()
+                - request_started
+            )
+            * 1000,
+            2,
         )
 
-        response.raise_for_status()
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="nvidia_content_safety_request_completed",
+            latency_ms=latency_ms,
+            status="success",
+        )
 
-        return response.json()
+        return result
+
+    except Exception:
+
+        latency_ms = round(
+            (
+                perf_counter()
+                - request_started
+            )
+            * 1000,
+            2,
+        )
+
+        logger.exception(
+            "NVIDIA content safety request failed",
+            extra={
+                "event": (
+                    "nvidia_content_safety_request_failed"
+                ),
+                "context": {
+                    "latency_ms": latency_ms,
+                },
+            },
+        )
+
+        raise
 
 
-
+# ============================================================
+# SAFETY DECISION EXTRACTION
+# ============================================================
 
 def _extract_safety_decision(
     result: dict,
 ) -> str:
+    """
+    Extract the safety classification from
+    NVIDIA Content Safety response.
+
+    Fail closed if the response is malformed.
+    """
 
     try:
 
         choices = result.get(
             "choices",
-            []
+            [],
         )
 
         if not choices:
@@ -217,12 +431,12 @@ def _extract_safety_decision(
 
         message = choices[0].get(
             "message",
-            {}
+            {},
         )
 
         content = message.get(
             "content",
-            ""
+            "",
         )
 
         if not content:
@@ -230,27 +444,21 @@ def _extract_safety_decision(
 
         content = content.lower().strip()
 
-        print(
-            "RAW SAFETY CLASSIFICATION:",
-            content
-        )
-
-        
-
         if "unsafe" in content:
-
             return "unsafe"
 
-        
-
         if "safe" in content:
-
             return "safe"
-
-        
 
         return "unsafe"
 
     except Exception:
+
+        logger.exception(
+            "Failed to extract safety decision",
+            extra={
+                "event": "safety_decision_extraction_failed",
+            },
+        )
 
         return "unsafe"

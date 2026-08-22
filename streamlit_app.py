@@ -1,8 +1,8 @@
-import streamlit as st
-import requests
 import time
 import uuid
 
+import requests
+import streamlit as st
 
 FASTAPI_URL = "http://localhost:8000"
 

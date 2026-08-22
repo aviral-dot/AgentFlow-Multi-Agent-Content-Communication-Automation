@@ -1,4 +1,3 @@
-import pytest
 
 from src.graphs.graph_builder import GraphBuilder
 

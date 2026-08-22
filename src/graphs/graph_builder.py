@@ -1,12 +1,9 @@
-from langgraph.graph import StateGraph, START, END
-
-
-from src.states.blogstate import AgentState
-
+from langgraph.graph import END, START, StateGraph
 
 from src.nodes.blog_node import BlogNode
 from src.nodes.mail_node import EmailNode
 from src.nodes.supervisor_node import SupervisorNode
+from src.states.blogstate import AgentState
 
 
 class GraphBuilder:

@@ -3,11 +3,11 @@
 from deepeval import assert_test
 from deepeval.test_case import LLMTestCase
 
-from src.llms.groqllm import GroqLLM
 from src.graphs.graph_builder import GraphBuilder
+from src.llms.groqllm import GroqLLM
 
 from .dataset import BLOG_TEST_CASES
-from .metrics import title_relevancy, blog_quality
+from .metrics import blog_quality, title_relevancy
 
 
 def get_blog_graph():

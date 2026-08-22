@@ -46,16 +46,15 @@ async def test_email_tool_calls_mcp_send_email():
     with patch(
         "src.tools.email_tool.ClientSession",
         return_value=FakeSessionContext(),
+    ), patch(
+        "src.tools.email_tool.stdio_client",
+        return_value=FakeStdioContext(),
     ):
-        with patch(
-            "src.tools.email_tool.stdio_client",
-            return_value=FakeStdioContext(),
-        ):
-            result = await tool.send(
-                to="test@example.com",
-                subject="Test",
-                body="Hello",
-            )
+        result = await tool.send(
+            to="test@example.com",
+            subject="Test",
+            body="Hello",
+        )
 
     mock_session.initialize.assert_awaited_once()
 
@@ -114,20 +113,18 @@ async def test_email_tool_propagates_mcp_error():
     with patch(
         "src.tools.email_tool.ClientSession",
         return_value=FakeSessionContext(),
+    ), patch(
+        "src.tools.email_tool.stdio_client",
+        return_value=FakeStdioContext(),
+    ), pytest.raises(
+        RuntimeError,
+        match="MCP server unavailable",
     ):
-        with patch(
-            "src.tools.email_tool.stdio_client",
-            return_value=FakeStdioContext(),
-        ):
-            with pytest.raises(
-                RuntimeError,
-                match="MCP server unavailable",
-            ):
-                await tool.send(
-                    to="test@example.com",
-                    subject="Test",
-                    body="Hello",
-                )
+        await tool.send(
+            to="test@example.com",
+            subject="Test",
+            body="Hello",
+        )
 
     mock_session.initialize.assert_awaited_once()
 

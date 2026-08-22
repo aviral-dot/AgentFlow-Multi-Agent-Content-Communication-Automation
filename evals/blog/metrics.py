@@ -1,10 +1,9 @@
 import os
-from dotenv import load_dotenv
 
 from deepeval.metrics import AnswerRelevancyMetric, GEval
-from deepeval.test_case import LLMTestCaseParams
 from deepeval.models import DeepEvalBaseLLM
-
+from deepeval.test_case import LLMTestCaseParams
+from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 
 load_dotenv()

@@ -1,9 +1,13 @@
+import logging
+from time import perf_counter
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from src.states.blogstate import AgentState
+from src.utils.loggers import get_logger, log_event
 
+logger = get_logger(__name__)
 
 class SupervisorDecision(BaseModel):
 
@@ -24,6 +28,12 @@ class SupervisorNode:
 
         self.structured_llm = llm.with_structured_output(
             SupervisorDecision
+        )
+
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="supervisor_initialized",
         )
 
     async def decide(self, state: AgentState):
@@ -54,7 +64,56 @@ Rules:
   choose BLOG.
 """
 
-        decision =await self.structured_llm.ainvoke(prompt)
+        routing_started = perf_counter()
+
+        log_event(
+            logger,
+            level = logging.INFO,
+            event = "supervisor routing started"
+        )
+
+        try:
+
+            decision = await self.structured_llm.ainvoke(
+                prompt
+            )
+
+        except Exception:
+
+            latency_ms = round(
+                (perf_counter() - routing_started) * 1000,
+                2,
+            )
+
+            logger.exception(
+                "Supervisor routing failed",
+                extra={
+                    "event": "supervisor_routing_failed",
+                    "context": {
+                        "latency_ms": latency_ms,
+                    },
+                },
+            )
+
+            raise
+
+        # ----------------------------------------------------
+        # ROUTING COMPLETED
+        # ----------------------------------------------------
+
+        latency_ms = round(
+            (perf_counter() - routing_started) * 1000,
+            2,
+        )
+
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="supervisor_routing_completed",
+            route=decision.route,
+            latency_ms=latency_ms,
+            status="success",
+        )
 
         return {
             "route": decision.route

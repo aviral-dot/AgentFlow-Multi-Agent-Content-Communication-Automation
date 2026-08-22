@@ -1,7 +1,6 @@
 from src.gateway.llm_gateway import LLMGateway
 from src.graphs.graph_builder import GraphBuilder
 
-
 # Initialize LLM Gateway
 gateway = LLMGateway()
 

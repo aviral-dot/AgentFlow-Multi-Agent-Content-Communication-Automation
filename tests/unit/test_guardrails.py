@@ -4,12 +4,11 @@ import httpx
 import pytest
 
 from src.guardrails.guardrail import (
-    check_input,
-    check_output,
     _extract_safety_decision,
     _nvidia_content_safety,
+    check_input,
+    check_output,
 )
-
 
 # ============================================================
 # check_input()

@@ -1,7 +1,15 @@
 # Environment variables / secrets
 .env
+.env.*
 credentials.json
 token.json
+
+# Application logs
+logs/*.jsonl
+logs/*.log
+
+# Keep logs directory in Git
+!logs/.gitkeep
 
 # LangGraph generated files
 .langgraph_api/

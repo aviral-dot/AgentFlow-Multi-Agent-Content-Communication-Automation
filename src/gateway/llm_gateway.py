@@ -1,8 +1,16 @@
-from litellm import Router
+import logging
+import os
 
 from langchain_litellm import ChatLiteLLMRouter
+from litellm import Router
 
 from src.gateway.config import LLMGatewayConfig
+from src.utils.loggers import (
+    get_logger,
+    log_event,
+)
+
+logger = get_logger(__name__)
 
 
 class LLMGateway:
@@ -14,73 +22,128 @@ class LLMGateway:
     """
 
     def __init__(self):
-        LLMGatewayConfig.validate()
 
-        self.model_list = [
-            {
-                "model_name": "primary",
-                "litellm_params": {
-                    "model": LLMGatewayConfig.PRIMARY_MODEL,
-                    "api_key": self._get_api_key(
-                        LLMGatewayConfig.PRIMARY_MODEL
-                    ),
-                }
-            }
-        ]
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="llm_gateway_initialization_started",
+        )
 
-        fallbacks = []
+        try:
 
-        if self._fallback_available():
+            LLMGatewayConfig.validate()
 
-            self.model_list.append(
+            self.model_list = [
                 {
-                    "model_name": "fallback",
+                    "model_name": "primary",
                     "litellm_params": {
-                        "model": LLMGatewayConfig.FALLBACK_MODEL,
-                        "api_key": self._get_api_key(
-                            LLMGatewayConfig.FALLBACK_MODEL
+                        "model": (
+                            LLMGatewayConfig.PRIMARY_MODEL
                         ),
-                    }
-                }
-            )
-
-            fallbacks = [
-                {
-                    "primary": [
-                        "fallback"
-                    ]
+                        "api_key": self._get_api_key(
+                            LLMGatewayConfig.PRIMARY_MODEL
+                        ),
+                    },
                 }
             ]
 
-        self.router = Router(
-            model_list=self.model_list,
-            routing_strategy=(
-                LLMGatewayConfig.ROUTING_STRATEGY
-            ),
-            num_retries=(
-                LLMGatewayConfig.NUM_RETRIES
-            ),
-            timeout=(
-                LLMGatewayConfig.TIMEOUT
-            ),
-            fallbacks=fallbacks,
-        )
+            fallbacks = []
 
-        self._models = {}
+            fallback_available = (
+                self._fallback_available()
+            )
+
+            if fallback_available:
+
+                self.model_list.append(
+                    {
+                        "model_name": "fallback",
+                        "litellm_params": {
+                            "model": (
+                                LLMGatewayConfig.FALLBACK_MODEL
+                            ),
+                            "api_key": self._get_api_key(
+                                LLMGatewayConfig.FALLBACK_MODEL
+                            ),
+                        },
+                    }
+                )
+
+                fallbacks = [
+                    {
+                        "primary": [
+                            "fallback"
+                        ]
+                    }
+                ]
+
+            self.router = Router(
+                model_list=self.model_list,
+                routing_strategy=(
+                    LLMGatewayConfig.ROUTING_STRATEGY
+                ),
+                num_retries=(
+                    LLMGatewayConfig.NUM_RETRIES
+                ),
+                timeout=(
+                    LLMGatewayConfig.TIMEOUT
+                ),
+                fallbacks=fallbacks,
+            )
+
+            self._models = {}
+
+            log_event(
+                logger,
+                level=logging.INFO,
+                event="llm_gateway_initialized",
+                primary_model=(
+                    LLMGatewayConfig.PRIMARY_MODEL
+                ),
+                fallback_enabled=fallback_available,
+                routing_strategy=(
+                    LLMGatewayConfig.ROUTING_STRATEGY
+                ),
+                retries=(
+                    LLMGatewayConfig.NUM_RETRIES
+                ),
+                timeout=(
+                    LLMGatewayConfig.TIMEOUT
+                ),
+                status="success",
+            )
+
+        except Exception:
+
+            logger.exception(
+                "LLM gateway initialization failed",
+                extra={
+                    "event": (
+                        "llm_gateway_initialization_failed"
+                    ),
+                    "context": {},
+                },
+            )
+
+            raise
 
     @staticmethod
-    def _get_api_key(model: str):
-        """Return the correct API key for a model."""
+    def _get_api_key(
+        model: str,
+    ):
+        """
+        Return the API key associated with a model.
+
+        API keys are never logged.
+        """
 
         if model.startswith("groq/"):
-            import os
 
             return os.getenv(
                 "GROQ_API_KEY"
             )
 
         if model.startswith("gemini/"):
-            import os
 
             return os.getenv(
                 "GEMINI_API_KEY"
@@ -89,11 +152,12 @@ class LLMGateway:
         return None
 
     @staticmethod
-    def _fallback_available():
-        import os
+    def _fallback_available() -> bool:
 
         return bool(
-            os.getenv("GEMINI_API_KEY")
+            os.getenv(
+                "GEMINI_API_KEY"
+            )
         )
 
     def get_llm(
@@ -104,6 +168,9 @@ class LLMGateway:
         """
         Return a LangChain-compatible LLM
         backed by the LiteLLM Router.
+
+        LLM clients are cached by model name
+        and temperature.
         """
 
         cache_key = (
@@ -111,14 +178,73 @@ class LLMGateway:
             temperature,
         )
 
-        if cache_key not in self._models:
+        # ----------------------------------------------------
+        # CACHE HIT
+        # ----------------------------------------------------
 
-            self._models[cache_key] = (
-                ChatLiteLLMRouter(
-                    router=self.router,
-                    model_name=model_name,
-                    temperature=temperature,
-                )
+        if cache_key in self._models:
+
+            log_event(
+                logger,
+                level=logging.DEBUG,
+                event="llm_client_cache_hit",
+                model_name=model_name,
+                temperature=temperature,
             )
 
-        return self._models[cache_key]
+            return self._models[
+                cache_key
+            ]
+
+        # ----------------------------------------------------
+        # CREATE LLM CLIENT
+        # ----------------------------------------------------
+
+        log_event(
+            logger,
+            level=logging.INFO,
+            event="llm_client_creation_started",
+            model_name=model_name,
+            temperature=temperature,
+        )
+
+        try:
+
+            llm = ChatLiteLLMRouter(
+                router=self.router,
+                model_name=model_name,
+                temperature=temperature,
+            )
+
+            self._models[
+                cache_key
+            ] = llm
+
+            log_event(
+                logger,
+                level=logging.INFO,
+                event="llm_client_created",
+                model_name=model_name,
+                temperature=temperature,
+                cache_size=len(
+                    self._models
+                ),
+                status="success",
+            )
+
+            return llm
+
+        except Exception:
+
+            logger.exception(
+                "LLM client creation failed",
+                extra={
+                    "event": "llm_client_creation_failed",
+                    "context": {
+                        "model_name": model_name,
+                        "temperature": temperature,
+                    },
+                },
+            )
+
+            raise
