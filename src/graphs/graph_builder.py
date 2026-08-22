@@ -88,11 +88,6 @@ class GraphBuilder:
         )
 
 
-        # self.graph.add_edge(
-        #     "draft_email",
-        #     "send_email"
-        # )
-
         self.graph.add_edge(
           "draft_email",
           "approve_email"

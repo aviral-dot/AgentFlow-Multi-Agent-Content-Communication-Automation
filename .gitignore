@@ -9,10 +9,19 @@ token.json
 # Python generated files
 __pycache__/
 *.py[cod]
+*$py.class
 
 # Virtual environments
 .venv/
 venv/
+env/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
 
 # Build files
 build/
@@ -22,3 +31,8 @@ wheels/
 
 # IDE
 .vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
