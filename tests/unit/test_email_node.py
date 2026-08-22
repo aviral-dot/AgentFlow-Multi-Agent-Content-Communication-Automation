@@ -39,7 +39,10 @@ async def test_email_draft_returns_structured_email():
     node = EmailNode(FakeLLM())
 
     state = {
-        "query": "Send an email to test@example.com about tomorrow's meeting."
+        "query": (
+            "Send an email to test@example.com "
+            "about tomorrow's meeting."
+        )
     }
 
     result = await node.draft_email(state)
@@ -72,9 +75,12 @@ async def test_send_email_calls_email_tool(sample_email):
     )
 
     assert result["response"] == "Email Sent Successfully"
+    assert result["tool_result"] == {
+        "success": True
+    }
 
 
-def test_approve_email_creates_human_approval_interrupt(
+def test_approve_email_returns_approve_decision(
     sample_email,
 ):
     node = object.__new__(EmailNode)
@@ -97,4 +103,29 @@ def test_approve_email_creates_human_approval_interrupt(
 
     assert payload["type"] == "email_approval"
     assert payload["email"]["to"] == "test@example.com"
+    assert payload["email"]["subject"] == "Meeting Tomorrow"
+    assert payload["email"]["body"] == "This is a test email."
+
     assert result["approval"] == "approve"
+
+
+def test_approve_email_returns_reject_decision(
+    sample_email,
+):
+    node = object.__new__(EmailNode)
+
+    state = {
+        "email": sample_email
+    }
+
+    with patch(
+        "src.nodes.mail_node.interrupt"
+    ) as mock_interrupt:
+
+        mock_interrupt.return_value = "reject"
+
+        result = node.approve_email(state)
+
+    mock_interrupt.assert_called_once()
+
+    assert result["approval"] == "reject"
