@@ -39,7 +39,8 @@ class EmailNode:
     def __init__(self, llm):
 
         self.llm = llm
-
+       
+        
         self.email_tool = EmailTool()
 
         self.structured_llm = (
@@ -52,6 +53,7 @@ class EmailNode:
         log_event(
             logger,
             level=logging.INFO,
+            
             event="email_node_initialized",
         )
 
@@ -65,6 +67,9 @@ class EmailNode:
     ):
 
         query = state["query"]
+        request_id = state[
+          "request_id"
+        ]
 
         prompt = f"""
 You are an AI Email Assistant.
@@ -97,6 +102,7 @@ Do not return any text outside the JSON.
         log_event(
             logger,
             level=logging.INFO,
+            request_id=request_id,
             event="email_draft_generation_started",
         )
 
@@ -121,6 +127,7 @@ Do not return any text outside the JSON.
                         "latency_ms": latency_ms,
                     },
                 },
+                request_id=request_id
             )
 
             raise
@@ -135,6 +142,7 @@ Do not return any text outside the JSON.
             level=logging.INFO,
             event="email_draft_generation_completed",
             latency_ms=latency_ms,
+            request_id=request_id,
             status="success",
         )
 
@@ -156,11 +164,13 @@ Do not return any text outside the JSON.
     ):
 
         email = state["email"]
+        request_id = state["request_id"]
 
         log_event(
             logger,
             level=logging.INFO,
-            event="email_approval_requested",
+            request_id=request_id,
+            event="email_approval_requested"
         )
 
         decision = interrupt(
@@ -181,6 +191,7 @@ Do not return any text outside the JSON.
         log_event(
             logger,
             level=logging.INFO,
+            request_id=request_id,
             event="email_approval_decision_received",
             decision=decision,
         )
@@ -201,12 +212,14 @@ Do not return any text outside the JSON.
         email = EmailDraft.model_validate(
             state["email"]
         )
+        request_id = state["request_id"]
 
         send_started = perf_counter()
 
         log_event(
             logger,
             level=logging.INFO,
+            request_id=request_id,
             event="email_send_started",
         )
 
@@ -227,6 +240,7 @@ Do not return any text outside the JSON.
 
             logger.exception(
                 "Email sending failed",
+                request_id=request_id,
                 extra={
                     "event": "email_send_failed",
                     "context": {
@@ -245,6 +259,7 @@ Do not return any text outside the JSON.
         log_event(
             logger,
             level=logging.INFO,
+            request_id=request_id,
             event="email_send_completed",
             latency_ms=latency_ms,
             status="success",
@@ -255,4 +270,3 @@ Do not return any text outside the JSON.
             "tool_result": result,
         }
 
-    

@@ -325,10 +325,25 @@ async def chat(request: Request):
         # LANGGRAPH CONFIG
         # ----------------------------------------------------
 
+        environment = os.getenv(
+            "ENVIRONMENT",
+            "development",
+        )
+
         config = {
             "configurable": {
-                "thread_id": thread_id
-            }
+                "thread_id": thread_id,
+         },
+         "metadata": {
+              "request_id": request_id,
+              "workflow": "agentflow",
+              "feature": "chat",
+               "environment": environment,
+           },
+          "tags": [
+              "agentflow",
+               "chat",
+           ],
         }
 
         # ----------------------------------------------------
@@ -363,7 +378,8 @@ async def chat(request: Request):
 
         result = await graph.ainvoke(
             {
-                "query": query
+                "query": query,
+                "request_id": request_id,
             },
             config=config,
         )
@@ -707,11 +723,27 @@ async def email_approval(
                 detail="Application is not ready",
             )
 
+        environment = os.getenv(
+         "ENVIRONMENT",
+         "development",
+    )
+
         config = {
-            "configurable": {
-                "thread_id": thread_id
-            }
-        }
+          "configurable": {
+             "thread_id": thread_id,
+         },
+         "metadata": {
+              "request_id": request_id,
+              "workflow": "agentflow",
+              "feature": "email_approval",
+              "environment": environment,
+          },
+          "tags": [
+              "agentflow",
+              "email",
+              "hitl",
+          ],
+    }       
 
         resume_started = perf_counter()
 
@@ -968,3 +1000,4 @@ if __name__ == "__main__":
         ).serve(),
         loop_factory=asyncio.SelectorEventLoop,
     )
+

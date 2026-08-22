@@ -25,4 +25,6 @@ class AgentState(TypedDict):
 
     tool_result: dict
 
+    request_id: str
+
     approval: str

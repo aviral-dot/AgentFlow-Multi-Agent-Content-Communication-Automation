@@ -1,11 +1,16 @@
+from typing import Literal
 import logging
 from time import perf_counter
-from typing import Literal
 
 from pydantic import BaseModel, Field
+from typing import Literal
 
 from src.states.blogstate import AgentState
-from src.utils.loggers import get_logger, log_event
+
+from src.utils.loggers import(
+    get_logger,
+    log_event
+)
 
 logger = get_logger(__name__)
 
@@ -40,6 +45,9 @@ class SupervisorNode:
 
         query = state["query"]
 
+          
+        request_id = state["request_id"]
+
         prompt = f"""
 You are a supervisor for a multi-agent system.
 
@@ -69,7 +77,8 @@ Rules:
         log_event(
             logger,
             level = logging.INFO,
-            event = "supervisor routing started"
+            event = "supervisor routing started",
+            request_id=request_id,
         )
 
         try:
@@ -91,8 +100,9 @@ Rules:
                     "event": "supervisor_routing_failed",
                     "context": {
                         "latency_ms": latency_ms,
-                    },
+                    }
                 },
+                request_id=request_id,
             )
 
             raise
@@ -112,9 +122,11 @@ Rules:
             event="supervisor_routing_completed",
             route=decision.route,
             latency_ms=latency_ms,
+            request_id=request_id,
             status="success",
         )
 
         return {
             "route": decision.route
         }
+

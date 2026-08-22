@@ -35,10 +35,13 @@ class BlogNode:
         Generate a title for the blog.
         """
 
+        request_id = state["request_id"]
+
         if "query" not in state or not state["query"]:
             log_event(
                 logger,
                 level=logging.WARNING,
+                request_id=request_id,
                 event="blog_title_generation_skipped",
                 reason="query_missing",
             )
@@ -64,6 +67,7 @@ This title should be creative and SEO friendly.
         log_event(
             logger,
             level=logging.INFO,
+            request_id=request_id,
             event="blog_title_generation_started",
         )
 
@@ -82,6 +86,7 @@ This title should be creative and SEO friendly.
 
             logger.exception(
                 "Blog title generation failed",
+                request_id=request_id,
                 extra={
                     "event": "blog_title_generation_failed",
                     "context": {
@@ -108,6 +113,7 @@ This title should be creative and SEO friendly.
             level=logging.INFO,
             event="blog_title_generation_completed",
             latency_ms=latency_ms,
+            request_id=request_id,
             status="success",
         )
 
@@ -125,10 +131,13 @@ This title should be creative and SEO friendly.
         Generate the main blog content.
         """
 
+        request_id = state["request_id"]
+
         if "query" not in state or not state["query"]:
             log_event(
                 logger,
                 level=logging.WARNING,
+                request_id=request_id,
                 event="blog_content_generation_skipped",
                 reason="query_missing",
             )
@@ -154,6 +163,7 @@ for the {query}.
         log_event(
             logger,
             level=logging.INFO,
+            request_id=request_id,
             event="blog_content_generation_started",
         )
 
@@ -172,6 +182,7 @@ for the {query}.
 
             logger.exception(
                 "Blog content generation failed",
+                request_id=request_id,
                 extra={
                     "event": "blog_content_generation_failed",
                     "context": {
@@ -194,6 +205,7 @@ for the {query}.
         log_event(
             logger,
             level=logging.INFO,
+            request_id=request_id,
             event="blog_content_generation_completed",
             latency_ms=latency_ms,
             status="success",
