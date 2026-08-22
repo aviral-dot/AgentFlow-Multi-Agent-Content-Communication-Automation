@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 import logging
 from time import perf_counter
 

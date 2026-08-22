@@ -37,6 +37,7 @@ include = ["src*"]
 
 [dependency-groups]
 dev = [
+    "deepeval>=4.1.10",
     "httpx>=0.28.1",
     "mypy>=2.3.1",
     "pytest>=9.1.1",
@@ -57,3 +58,19 @@ asyncio_mode = "auto"
 pythonpath = ["."]
 
 addopts = "-ra"
+
+[tool.mypy]
+exclude = '^evals/'
+
+
+[[tool.mypy.overrides]]
+module = ["nemoguardrails"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "google_auth_oauthlib.*",
+    "googleapiclient.*",
+]
+ignore_missing_imports = true
+

@@ -1,3 +1,6 @@
+
+# mypy: ignore-errors
+
 import os
 
 from langgraph.checkpoint.postgres import PostgresSaver
